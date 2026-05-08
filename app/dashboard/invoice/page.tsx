@@ -31,6 +31,10 @@ async function loadSettings() {
 useEffect(() => {
   loadSettings();
 }, []);
+
+if (typeof window === "undefined") {
+  return null;
+}
   const params = useSearchParams();
 
   const invoice = params.get("invoice");
