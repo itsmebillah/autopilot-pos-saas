@@ -17,6 +17,11 @@ export async function GET() {
 
   let totalSales = 0;
 
+  const lowStockProducts =
+  products?.filter(
+    (p) => Number(p.stock) <= 5
+  ).length || 0;
+
   sales?.forEach((sale) => {
     totalSales += Number(sale.total || 0);
   });
@@ -26,5 +31,6 @@ export async function GET() {
     totalProducts: products?.length || 0,
     totalCustomers: customers?.length || 0,
     totalSales,
+    lowStockProducts,
   });
 }

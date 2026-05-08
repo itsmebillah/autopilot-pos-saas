@@ -26,10 +26,13 @@ export default function Sidebar() {
           <span>Dashboard</span>
         </a>
 
-        <div className="flex items-center gap-3 p-3 rounded-xl hover:bg-white/10 text-white cursor-pointer">
-          <ShoppingCart size={20} />
-          <span>Sales</span>
-        </div>
+        <a
+  href="/dashboard/sales"
+  className="flex items-center gap-3 p-3 rounded-xl hover:bg-white/10 text-white"
+>
+  <ShoppingCart size={20} />
+  <span>Sales</span>
+</a>
 
         <a
           href="/dashboard/products"
@@ -45,13 +48,23 @@ export default function Sidebar() {
         </div>
 
         <div className="flex items-center gap-3 p-3 rounded-xl hover:bg-white/10 text-white cursor-pointer">
-          <Receipt size={20} />
-          <span>Reports</span>
+          <a
+  href="/dashboard/orders"
+  className="flex items-center gap-3 p-3 rounded-xl hover:bg-white/10 text-white"
+>
+  <Receipt size={20} />
+  <span>Orders</span>
+</a>
         </div>
 
         <div className="flex items-center gap-3 p-3 rounded-xl hover:bg-white/10 text-white cursor-pointer">
-          <Settings size={20} />
-          <span>Settings</span>
+          <a
+  href="/dashboard/settings"
+  className="flex items-center gap-3 p-3 rounded-xl hover:bg-white/10 text-white"
+>
+  <Settings size={20} />
+  <span>Settings</span>
+</a>
         </div>
 
       </div>

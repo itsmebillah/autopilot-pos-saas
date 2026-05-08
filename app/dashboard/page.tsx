@@ -3,21 +3,13 @@
 import { useEffect, useState } from "react";
 import Sidebar from "@/components/Sidebar";
 
-import {
-  LayoutDashboard,
-  ShoppingCart,
-  Package,
-  Users,
-  Receipt,
-  Settings,
-} from "lucide-react";
-
 export default function DashboardPage() {
 
   const [stats, setStats] = useState({
     totalProducts: 0,
     totalCustomers: 0,
     totalSales: 0,
+    lowStockProducts: 0,
   });
 
   async function loadDashboard() {
@@ -32,6 +24,7 @@ export default function DashboardPage() {
         totalProducts: data.totalProducts,
         totalCustomers: data.totalCustomers,
         totalSales: data.totalSales,
+        lowStockProducts: data.lowStockProducts,
       });
 
     }
@@ -46,7 +39,6 @@ export default function DashboardPage() {
 
       <Sidebar />
 
-      {/* Main */}
       <div className="flex-1 p-8">
 
         <div className="flex items-center justify-between mb-10">
@@ -67,8 +59,7 @@ export default function DashboardPage() {
 
         </div>
 
-        {/* Stats */}
-        <div className="grid grid-cols-1 md:grid-cols-3 gap-5">
+        <div className="grid grid-cols-1 md:grid-cols-4 gap-5">
 
           <div className="bg-white/10 p-6 rounded-2xl">
 
@@ -102,6 +93,18 @@ export default function DashboardPage() {
 
             <h2 className="text-3xl font-bold mt-3">
               {stats.totalCustomers}
+            </h2>
+
+          </div>
+
+          <div className="bg-red-500/20 p-6 rounded-2xl border border-red-500/20">
+
+            <p className="text-red-300">
+              Low Stock
+            </p>
+
+            <h2 className="text-3xl font-bold mt-3">
+              {stats.lowStockProducts}
             </h2>
 
           </div>
