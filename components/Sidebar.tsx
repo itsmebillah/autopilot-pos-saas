@@ -10,6 +10,7 @@ import {
 export default function Sidebar() {
 
   return (
+
     <div className="w-64 bg-white/5 border-r border-white/10 p-5 min-h-screen">
 
       <h1 className="text-2xl font-bold mb-10 text-white">
@@ -27,12 +28,12 @@ export default function Sidebar() {
         </a>
 
         <a
-  href="/dashboard/sales"
-  className="flex items-center gap-3 p-3 rounded-xl hover:bg-white/10 text-white"
->
-  <ShoppingCart size={20} />
-  <span>Sales</span>
-</a>
+          href="/dashboard/sales"
+          className="flex items-center gap-3 p-3 rounded-xl hover:bg-white/10 text-white"
+        >
+          <ShoppingCart size={20} />
+          <span>Sales</span>
+        </a>
 
         <a
           href="/dashboard/products"
@@ -42,33 +43,41 @@ export default function Sidebar() {
           <span>Products</span>
         </a>
 
-        <div className="flex items-center gap-3 p-3 rounded-xl hover:bg-white/10 text-white cursor-pointer">
+        <a
+          href="/dashboard/customers"
+          className="flex items-center gap-3 p-3 rounded-xl hover:bg-white/10 text-white"
+        >
           <Users size={20} />
           <span>Customers</span>
-        </div>
+        </a>
 
-        <div className="flex items-center gap-3 p-3 rounded-xl hover:bg-white/10 text-white cursor-pointer">
-          <a
-  href="/dashboard/orders"
-  className="flex items-center gap-3 p-3 rounded-xl hover:bg-white/10 text-white"
->
-  <Receipt size={20} />
-  <span>Orders</span>
-</a>
-        </div>
+        <a
+          href="/dashboard/orders"
+          className="flex items-center gap-3 p-3 rounded-xl hover:bg-white/10 text-white"
+        >
+          <Receipt size={20} />
+          <span>Orders</span>
+        </a>
 
-        <div className="flex items-center gap-3 p-3 rounded-xl hover:bg-white/10 text-white cursor-pointer">
-          <a
-  href="/dashboard/settings"
-  className="flex items-center gap-3 p-3 rounded-xl hover:bg-white/10 text-white"
->
-  <Settings size={20} />
-  <span>Settings</span>
-</a>
-        </div>
+        <a
+          href="/dashboard/reports"
+          className="flex items-center gap-3 p-3 rounded-xl hover:bg-white/10 text-white"
+        >
+          <Receipt size={20} />
+          <span>Reports</span>
+        </a>
+
+        <a
+          href="/dashboard/settings"
+          className="flex items-center gap-3 p-3 rounded-xl hover:bg-white/10 text-white"
+        >
+          <Settings size={20} />
+          <span>Settings</span>
+        </a>
 
       </div>
 
     </div>
+
   );
 }

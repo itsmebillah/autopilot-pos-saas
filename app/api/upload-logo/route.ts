@@ -23,17 +23,14 @@ export async function POST(req: Request) {
     const fileName =
       `${Date.now()}-${file.name}`;
 
-    const buffer =
-      Buffer.from(
-        await file.arrayBuffer()
-      );
+    
 
     const { error } =
       await supabase.storage
         .from("logos")
         .upload(
           fileName,
-          buffer,
+          file,
           {
             contentType:
               file.type,
@@ -61,7 +58,9 @@ export async function POST(req: Request) {
         publicUrlData.publicUrl,
     });
 
-  } catch {
+  } catch (error) {
+
+  console.log(error);
 
     return NextResponse.json({
       success: false,

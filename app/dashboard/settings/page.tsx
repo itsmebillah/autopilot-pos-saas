@@ -51,9 +51,10 @@ export default function SettingsPage() {
   }, []);
 
   async function saveSettings(
+    
     e: React.FormEvent
   ) {
-
+console.log("SAVE CLICKED");
     e.preventDefault();
 let logoUrl = "";
 
@@ -80,7 +81,8 @@ if (logo) {
     await uploadRes.json();
 
   if (uploadData.success) {
-
+    console.log(uploadData);
+console.log(uploadData);
     logoUrl =
       uploadData.url;
 
