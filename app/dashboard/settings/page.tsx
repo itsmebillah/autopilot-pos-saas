@@ -5,6 +5,8 @@ import Sidebar from "@/components/Sidebar";
 
 export default function SettingsPage() {
 
+    const [logo, setLogo] =
+  useState<File | null>(null);
   const [storeName, setStoreName] =
     useState("");
 
@@ -53,7 +55,38 @@ export default function SettingsPage() {
   ) {
 
     e.preventDefault();
+let logoUrl = "";
 
+if (logo) {
+
+  const formData =
+    new FormData();
+
+  formData.append(
+    "file",
+    logo
+  );
+
+  const uploadRes =
+    await fetch(
+      "/api/upload-logo",
+      {
+        method: "POST",
+        body: formData,
+      }
+    );
+
+  const uploadData =
+    await uploadRes.json();
+
+  if (uploadData.success) {
+
+    logoUrl =
+      uploadData.url;
+
+  }
+
+}
     const res = await fetch(
       "/api/settings",
       {
@@ -67,6 +100,7 @@ export default function SettingsPage() {
           phone,
           address,
           currency,
+          logo_url: logoUrl,
         }),
       }
     );
@@ -124,7 +158,22 @@ export default function SettingsPage() {
             }
             className="w-full p-4 rounded-xl bg-black/30"
           />
+<input
+  type="file"
+  accept="image/*"
+  onChange={(e) => {
 
+    if (e.target.files?.[0]) {
+
+      setLogo(
+        e.target.files[0]
+      );
+
+    }
+
+  }}
+  className="w-full p-4 rounded-xl bg-black/30"
+/>
           <input
             type="text"
             placeholder="Currency"

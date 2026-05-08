@@ -31,11 +31,12 @@ export async function POST(req: Request) {
     const body = await req.json();
 
     const {
-      store_name,
-      phone,
-      address,
-      currency,
-    } = body;
+  store_name,
+  phone,
+  address,
+  currency,
+  logo_url,
+} = body;
 
     const { data: existing } =
       await supabase
@@ -53,6 +54,7 @@ export async function POST(req: Request) {
           phone,
           address,
           currency,
+          logo_url,
         })
         .eq("id", existing.id);
 
@@ -66,6 +68,7 @@ export async function POST(req: Request) {
             phone,
             address,
             currency,
+            logo_url,
           },
         ]);
 

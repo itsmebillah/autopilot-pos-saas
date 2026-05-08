@@ -1,5 +1,7 @@
 "use client";
 
+export const dynamic = "force-dynamic";
+
 import {
   useEffect,
   useState,
@@ -54,7 +56,15 @@ useEffect(() => {
           <h1 className="text-4xl font-bold text-center">
             Invoice
           </h1>
+{settings?.logo_url && (
 
+  <img
+    src={settings.logo_url}
+    alt="Logo"
+    className="w-24 h-24 object-cover mx-auto mb-4 rounded-2xl"
+  />
+
+)}
           <div className="text-center mb-8 mt-2">
 
   <p className="text-xl font-bold">
