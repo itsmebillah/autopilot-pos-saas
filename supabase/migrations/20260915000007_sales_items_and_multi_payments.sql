@@ -80,6 +80,8 @@ ALTER TABLE sale_items ADD COLUMN IF NOT EXISTS discount_amount NUMERIC(12,2) DE
 ALTER TABLE sale_items ADD COLUMN IF NOT EXISTS tax_amount NUMERIC(12,2) DEFAULT 0.00;
 ALTER TABLE sale_items ADD COLUMN IF NOT EXISTS total NUMERIC(12,2) DEFAULT 0.00;
 ALTER TABLE sale_items ADD COLUMN IF NOT EXISTS profit NUMERIC(12,2) DEFAULT 0.00;
+ALTER TABLE sale_items ADD COLUMN IF NOT EXISTS created_at TIMESTAMPTZ NOT NULL DEFAULT NOW();
+ALTER TABLE sale_items DROP CONSTRAINT IF EXISTS sale_items_product_id_fkey;
 
 -- Safely backfill line items monetary fields
 UPDATE sale_items

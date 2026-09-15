@@ -14,16 +14,16 @@
 
 | Area / Subsystem | Verification Method | Status | Notes |
 | :--- | :--- | :---: | :--- |
-| **Supabase CLI Authentication** | `npx supabase link --project-ref dhgfevlwiwcblobpxjca` | ⚠️ NOT VERIFIED / BLOCKED | CLI token belongs to a different organization account; access denied for `dhgfevlwiwcblobpxjca`. |
-| **Remote Database Inspection** | PostgREST / CLI inspection | ⚠️ NOT VERIFIED | Requires project access token / database password or connection string. |
-| **Declarative SQL Migrations (Files)** | Local DDL & Vitest verification | ✅ VERIFIED | 11 comprehensive SQL migration files in `supabase/migrations/` ready for non-destructive push. |
+| **Supabase CLI Authentication** | `npx supabase link --project-ref dhgfevlwiwcblobpxjca` | ✅ RESOLVED & LINKED | Supabase CLI authenticated and linked to `dhgfevlwiwcblobpxjca`. |
+| **Remote Database Inspection** | PostgREST / CLI inspection | ✅ VERIFIED | Remote inspection completed in Phase 1.7B; migrations applied in Phase 1.8. |
+| **Declarative SQL Migrations (Files)** | Local DDL & Vitest verification | ✅ VERIFIED | 11 comprehensive SQL migration files in `supabase/migrations/` successfully applied remotely. |
 | **TypeScript Database Models** | `npx tsc --noEmit` & `types/database.ts` | ✅ VERIFIED | 100% type coverage across 23 database entities and relations (0 compiler errors). |
 | **RLS Multi-Tenant Policies (Code/DDL)** | Declarative DDL (`20260915000009_rls_security_policies.sql`) | ✅ VERIFIED (CODE) | 100% RLS coverage defined on all 23 tables using `SECURITY DEFINER` helper functions. |
-| **RLS Multi-Tenant Isolation (Real DB)** | Live PostgreSQL Execution | ⚠️ NOT VERIFIED (REMOTE) | Simulation tests passed 6/6 (`tests/rls-isolation.test.ts`). Remote execution awaiting project link. |
+| **RLS Multi-Tenant Isolation (Real DB)** | Live PostgreSQL Execution | ✅ VERIFIED REMOTELY | Verified on remote Supabase database in Phase 1.8 (`scripts/verify_remote_rls_isolation.sql`). |
 | **Atomic Checkout RPC (`create_sale_atomic`)** | Declarative DDL (`20260915000010_atomic_checkout_rpc.sql`) | ✅ VERIFIED (CODE) | Stored procedure with `SELECT FOR UPDATE` concurrency locks, double-entry ledger, and server-side pricing. |
-| **Atomic Checkout RPC (Real DB Execution)** | Live PostgreSQL Transaction Execution | ⚠️ NOT VERIFIED (REMOTE) | Simulation tests passed 10/10 (`tests/atomic-checkout.test.ts`). Remote execution awaiting project link. |
+| **Atomic Checkout RPC (Real DB Execution)** | Live PostgreSQL Transaction Execution | ✅ VERIFIED REMOTELY | Verified on remote Supabase database in Phase 1.8 (`scripts/verify_remote_rls_and_checkout.sql`). |
 | **POS Financial Engine** | Unit tests (`tests/pos-engine.test.ts`) | ✅ VERIFIED | 10/10 math, discount, tax, split payment, and serial validation scenarios passing. |
-| **Vercel Production Deployment** | Live HTTP probe & Vercel CLI inspect | ✅ VERIFIED | Deployed deployment `dpl_Dn1KCLUykUxZsmp8grs1sDrKdfy3` is live and serving responsive UI. |
+| **Vercel Production Deployment** | Live HTTP probe & Vercel CLI inspect | ✅ VERIFIED | Deployed deployment is live and serving responsive UI. |
 | **Secrets & Security Scan** | AST & repository grep search | ✅ VERIFIED | 0 hardcoded secrets, 0 service-role keys exposed in client bundles. |
 
 ---
