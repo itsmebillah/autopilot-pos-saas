@@ -10,6 +10,8 @@ import {
   Trash2,
   CheckCircle2,
   ArrowRight,
+  ArrowLeft,
+  X,
   Camera,
   Barcode,
 } from "lucide-react";
@@ -209,12 +211,50 @@ export default function SalesPage() {
     return matchesSearch && matchesCategory;
   });
 
+  // Handle browser back button state synchronization
+  useEffect(() => {
+    if (typeof window === "undefined") return;
+
+    const handlePopState = () => {
+      if (isCheckoutModalOpen) {
+        setIsCheckoutModalOpen(false);
+        return;
+      }
+      if (mobileCartOpen) {
+        setMobileCartOpen(false);
+        return;
+      }
+    };
+
+    window.addEventListener("popstate", handlePopState);
+    return () => window.removeEventListener("popstate", handlePopState);
+  }, [isCheckoutModalOpen, mobileCartOpen]);
+
+  function toggleMobileCart(open: boolean) {
+    if (open && typeof window !== "undefined") {
+      window.history.pushState({ posStep: "cart" }, "");
+    } else if (!open && typeof window !== "undefined" && window.history.state?.posStep === "cart") {
+      window.history.back();
+    }
+    setMobileCartOpen(open);
+  }
+
   function handleOpenCheckout() {
     if (cart.length === 0) {
       alert("Cart is empty! Please add products before checking out.");
       return;
     }
+    if (typeof window !== "undefined") {
+      window.history.pushState({ posStep: "checkout" }, "");
+    }
     setIsCheckoutModalOpen(true);
+  }
+
+  function handleCloseCheckout() {
+    if (typeof window !== "undefined" && window.history.state?.posStep === "checkout") {
+      window.history.back();
+    }
+    setIsCheckoutModalOpen(false);
   }
 
   function handleSaleComplete(invoice: InvoiceData) {
@@ -373,7 +413,17 @@ export default function SalesPage() {
             {/* Cart Header */}
             <div className="flex items-center justify-between pb-3 border-b border-slate-200 dark:border-white/10">
               <div className="flex items-center gap-2">
-                <ShoppingCart className="text-green-600 dark:text-green-500 w-5 h-5" />
+                <button
+                  type="button"
+                  onClick={() => toggleMobileCart(false)}
+                  className="lg:hidden flex items-center gap-1.5 px-2.5 py-1.5 rounded-xl bg-slate-100 dark:bg-white/10 text-slate-700 dark:text-gray-200 hover:bg-slate-200 dark:hover:bg-white/20 min-h-[44px] min-w-[44px] font-bold text-xs shrink-0"
+                  aria-label="Back to Sales POS"
+                  title="Back to Sales POS"
+                >
+                  <ArrowLeft size={16} />
+                  <span>Back</span>
+                </button>
+                <ShoppingCart className="text-green-600 dark:text-green-500 w-5 h-5 hidden sm:block" />
                 <h2 className="font-bold text-base text-slate-900 dark:text-white">Current Order</h2>
                 <span className="text-xs bg-slate-100 dark:bg-white/10 text-slate-700 dark:text-gray-300 px-2 py-0.5 rounded-full font-semibold">
                   {totalItemsCount}
@@ -384,17 +434,18 @@ export default function SalesPage() {
                   <button
                     type="button"
                     onClick={() => setCart([])}
-                    className="text-xs text-red-500 hover:underline"
+                    className="text-xs text-red-500 hover:underline px-2 py-1"
                   >
                     Clear
                   </button>
                 )}
                 <button
                   type="button"
-                  onClick={() => setMobileCartOpen(false)}
-                  className="lg:hidden p-1.5 text-slate-400 hover:text-slate-900 dark:hover:text-white rounded-lg"
+                  onClick={() => toggleMobileCart(false)}
+                  className="lg:hidden p-2 text-slate-400 hover:text-slate-900 dark:hover:text-white rounded-lg min-h-[44px] min-w-[44px] flex items-center justify-center"
+                  aria-label="Close cart drawer"
                 >
-                  ✕
+                  <X size={18} />
                 </button>
               </div>
             </div>
@@ -402,9 +453,18 @@ export default function SalesPage() {
             {/* Cart Line Items List */}
             <div className="flex-1 overflow-y-auto py-3 space-y-2.5 max-h-[calc(100vh-320px)] lg:max-h-[380px] pr-1">
               {cart.length === 0 ? (
-                <div className="py-12 text-center text-slate-400 dark:text-gray-500 flex flex-col items-center justify-center gap-2">
-                  <ShoppingCart size={32} className="opacity-30" />
-                  <p className="text-xs">Cart is empty. Tap products or scan barcode to add items.</p>
+                <div className="py-12 text-center text-slate-400 dark:text-gray-500 flex flex-col items-center justify-center gap-3">
+                  <ShoppingCart size={36} className="opacity-30" />
+                  <p className="text-xs font-semibold">Cart is empty. Tap products or scan barcode to add items.</p>
+                  <button
+                    type="button"
+                    onClick={() => toggleMobileCart(false)}
+                    className="lg:hidden mt-2 px-4 py-2.5 rounded-xl bg-slate-100 dark:bg-white/10 text-slate-700 dark:text-gray-200 hover:bg-slate-200 dark:hover:bg-white/20 text-xs font-bold flex items-center gap-2 min-h-[44px]"
+                    aria-label="Back to Sales POS"
+                  >
+                    <ArrowLeft size={16} />
+                    <span>Back to Sales POS</span>
+                  </button>
                 </div>
               ) : (
                 cart.map((item) => (
@@ -415,7 +475,7 @@ export default function SalesPage() {
                     <div className="flex-1 min-w-0">
                       <h3 className="text-xs font-semibold text-slate-900 dark:text-white truncate">{item.name}</h3>
                       <div className="text-[11px] text-slate-500 dark:text-gray-400 font-mono mt-0.5">
-                        {currencySymbol}{Number(item.sell_price || 0).toLocaleString()} $\times$ {item.quantity} ={" "}
+                        {currencySymbol}{Number(item.sell_price || 0).toLocaleString()} × {item.quantity} ={" "}
                         <span className="text-green-600 dark:text-green-400 font-bold">
                           {currencySymbol}{(Number(item.sell_price || 0) * item.quantity).toLocaleString()}
                         </span>
@@ -499,7 +559,7 @@ export default function SalesPage() {
         {/* Checkout Modal (Payment, Tender, Split Payment) */}
         <CheckoutModal
           isOpen={isCheckoutModalOpen}
-          onClose={() => setIsCheckoutModalOpen(false)}
+          onClose={handleCloseCheckout}
           cart={cart}
           onSaleComplete={handleSaleComplete}
           currencySymbol={currencySymbol}

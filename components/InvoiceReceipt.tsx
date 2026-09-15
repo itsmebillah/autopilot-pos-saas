@@ -199,7 +199,7 @@ function Thermal58mmLayout({
               )}
               <div className="flex justify-between text-[9.5px] receipt-tabular-nums">
                 <span className="text-gray-700">
-                  {item.quantity} x {formatCurrency(item.unit_price, config)}
+                  {item.quantity} × {formatCurrency(item.unit_price, config)}
                 </span>
                 <span className="font-bold text-right">
                   {formatCurrency(item.total, config)}

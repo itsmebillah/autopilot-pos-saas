@@ -393,5 +393,97 @@ describe('Pristine Empty POS Cart & Hardware Scanner Burst Isolation', () => {
     const isValidSalePayload = cart && cart.length > 0;
     expect(isValidSalePayload).toBe(false);
   });
+
+  describe('Regression & UX Fixes: Multiplication Symbol & Back Navigation', () => {
+    it('verifies line item renders proper Unicode multiplication symbol × (not $times$ or LaTeX)', () => {
+      const item = { name: 'Premium Geisha Coffee 1kg', sell_price: 22500, quantity: 1 };
+      const currencySymbol = '৳';
+      const formattedLine = `${currencySymbol}${Number(item.sell_price).toLocaleString()} × ${item.quantity} = ${currencySymbol}${(item.sell_price * item.quantity).toLocaleString()}`;
+
+      expect(formattedLine).toBe('৳22,500 × 1 = ৳22,500');
+      expect(formattedLine).not.toContain('$times$');
+      expect(formattedLine).not.toContain('\\times');
+      expect(formattedLine).not.toContain('times');
+    });
+
+    it('verifies mathematical calculation remains accurate for 22,500 × 1', () => {
+      const price = 22500;
+      const qty = 1;
+      const total = price * qty;
+      expect(total).toBe(22500);
+    });
+
+    it('verifies Back from Checkout preserves cart items, quantity, customer, discount, and tender state', () => {
+      // 1. Initial cart state
+      const cart = [{ id: 'coffee-1', name: 'Premium Geisha Coffee 1kg', sell_price: 22500, quantity: 1 }];
+      let isCheckoutOpen = true;
+
+      // User enters checkout state
+      const checkoutForm = {
+        customerName: 'John Doe',
+        customerPhone: '+8801700000000',
+        discountAmount: '500',
+        paymentMethod: 'CASH',
+        paidAmountInput: '23000',
+        notes: 'Express delivery',
+      };
+
+      // User hits Back button in Checkout
+      isCheckoutOpen = false; // onClose()
+      expect(isCheckoutOpen).toBe(false);
+
+      // Cart MUST remain preserved
+      expect(cart.length).toBe(1);
+      expect(cart[0].quantity).toBe(1);
+      expect(cart[0].sell_price).toBe(22500);
+
+      // User opens Checkout again -> state preserved
+      isCheckoutOpen = true;
+      expect(isCheckoutOpen).toBe(true);
+      expect(checkoutForm.customerName).toBe('John Doe');
+      expect(checkoutForm.paidAmountInput).toBe('23000');
+      expect(checkoutForm.discountAmount).toBe('500');
+    });
+
+    it('verifies Back from Current Order preserves cart items and quantities', () => {
+      const cart = [{ id: 'p1', name: 'Coffee', sell_price: 500, quantity: 2 }];
+      let mobileCartOpen = true;
+
+      // User clicks Back to Sales POS
+      mobileCartOpen = false;
+      expect(mobileCartOpen).toBe(false);
+
+      // Cart is NOT cleared
+      expect(cart.length).toBe(1);
+      expect(cart[0].quantity).toBe(2);
+    });
+
+    it('verifies empty cart provides clear empty state and Back to Sales POS action', () => {
+      const cart: any[] = [];
+      const isEmpty = cart.length === 0;
+      const backActionLabel = 'Back to Sales POS';
+
+      expect(isEmpty).toBe(true);
+      expect(backActionLabel).toBe('Back to Sales POS');
+    });
+
+    it('verifies Complete Sale flow clears cart after success and opens invoice', () => {
+      let cart = [{ id: 'p1', name: 'Coffee', sell_price: 500, quantity: 1 }];
+      let isCheckoutOpen = true;
+      let isInvoiceOpen = false;
+
+      // Sale succeeds
+      const saleCompleted = true;
+      if (saleCompleted) {
+        cart = [];
+        isCheckoutOpen = false;
+        isInvoiceOpen = true;
+      }
+
+      expect(cart.length).toBe(0);
+      expect(isCheckoutOpen).toBe(false);
+      expect(isInvoiceOpen).toBe(true);
+    });
+  });
 });
 

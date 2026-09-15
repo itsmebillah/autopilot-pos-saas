@@ -11,6 +11,7 @@ import {
   Percent,
   Receipt,
   ArrowRight,
+  ArrowLeft,
   Loader2,
   Plus,
   Trash2,
@@ -207,12 +208,22 @@ export default function CheckoutModal({
         {/* Header */}
         <div className="flex items-center justify-between p-4 sm:p-5 border-b border-slate-200 dark:border-white/10 bg-slate-50 dark:bg-gray-900/60 shrink-0">
           <div className="flex items-center gap-2.5">
-            <div className="p-2.5 rounded-2xl bg-green-500/15 text-green-600 dark:text-green-400">
-              <Receipt size={22} />
+            <button
+              type="button"
+              onClick={onClose}
+              className="flex items-center gap-1.5 px-3 py-2 text-slate-700 dark:text-gray-200 hover:bg-slate-200 dark:hover:bg-white/10 rounded-xl transition-colors text-xs sm:text-sm font-bold border border-slate-200 dark:border-white/10 min-h-[44px]"
+              aria-label="Back to Order"
+              title="Back to Order"
+            >
+              <ArrowLeft size={18} />
+              <span>Back</span>
+            </button>
+            <div className="p-2.5 rounded-2xl bg-green-500/15 text-green-600 dark:text-green-400 hidden sm:block">
+              <Receipt size={20} />
             </div>
             <div>
-              <h2 className="text-base sm:text-lg font-bold text-slate-900 dark:text-white">Complete Sale & Checkout</h2>
-              <p className="text-xs text-slate-500 dark:text-gray-400 font-medium">
+              <h2 className="text-sm sm:text-lg font-bold text-slate-900 dark:text-white leading-tight">Checkout</h2>
+              <p className="text-[11px] sm:text-xs text-slate-500 dark:text-gray-400 font-medium">
                 {cart.reduce((s, i) => s + i.quantity, 0)} Items • Total: {currencySymbol}
                 {grandTotal.toLocaleString()}
               </p>
@@ -221,7 +232,9 @@ export default function CheckoutModal({
           <button
             type="button"
             onClick={onClose}
-            className="p-2 text-slate-400 hover:text-slate-900 dark:hover:text-white hover:bg-slate-100 dark:hover:bg-white/10 rounded-xl transition-colors"
+            className="p-2 text-slate-400 hover:text-slate-900 dark:hover:text-white hover:bg-slate-100 dark:hover:bg-white/10 rounded-xl transition-colors min-h-[44px] min-w-[44px] flex items-center justify-center"
+            aria-label="Close Checkout"
+            title="Close Checkout"
           >
             <X size={20} />
           </button>
@@ -507,9 +520,11 @@ export default function CheckoutModal({
             <button
               type="button"
               onClick={onClose}
-              className="flex-1 py-3 px-4 rounded-xl border border-slate-300 dark:border-white/10 text-slate-700 dark:text-gray-300 font-bold text-xs hover:bg-slate-100 dark:hover:bg-white/10 transition-colors min-h-[46px]"
+              className="flex-1 py-3 px-4 rounded-xl border border-slate-300 dark:border-white/10 text-slate-700 dark:text-gray-300 font-bold text-xs hover:bg-slate-100 dark:hover:bg-white/10 transition-colors min-h-[46px] flex items-center justify-center gap-1.5"
+              aria-label="Back to Order"
             >
-              Cancel
+              <ArrowLeft size={16} />
+              <span>Back to Order</span>
             </button>
             <button
               type="submit"
