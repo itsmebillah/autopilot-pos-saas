@@ -49,6 +49,7 @@ export default function Sidebar() {
   const isManagement = user?.role === "owner" || user?.role === "manager" || user?.isSuperAdmin;
 
   const navItems = [
+    { href: "/dashboard/account", label: "Account Settings", icon: User },
     { href: "/dashboard", label: "Dashboard", icon: LayoutDashboard },
     { href: "/dashboard/sales", label: "Sales POS", icon: ShoppingCart },
     { href: "/dashboard/products", label: "Products & Stock", icon: Package },

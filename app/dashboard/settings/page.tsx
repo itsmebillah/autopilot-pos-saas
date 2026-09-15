@@ -3,6 +3,7 @@
 import { useEffect, useState } from "react";
 import Sidebar from "@/components/Sidebar";
 import ThemeToggle from "@/components/ThemeToggle";
+import ChangePasswordCard from "@/components/ChangePasswordCard";
 import { Store, Upload, Save, Receipt, Globe, Sun } from "lucide-react";
 
 export default function SettingsPage() {
@@ -130,6 +131,7 @@ export default function SettingsPage() {
         </div>
 
         {/* Settings Form */}
+        <div className="mb-6"><ChangePasswordCard /></div>
         <form onSubmit={saveSettings} className="space-y-6">
           {/* Section 0: Appearance & Theme Mode */}
           <div className="bg-white dark:bg-white/5 border border-slate-200 dark:border-white/10 p-5 sm:p-7 rounded-2xl sm:rounded-3xl space-y-4 shadow-sm">
