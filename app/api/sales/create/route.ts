@@ -50,6 +50,8 @@ export async function POST(req: Request) {
       .insert([
         {
           invoice_no,
+          store_id: session.store?.id || null,
+          cashier_id: session.user?.id || null,
           total: calculatedTotal,
           discount_amount: Number(discount_amount || 0),
           tax_amount: Number(tax_amount || 0),
