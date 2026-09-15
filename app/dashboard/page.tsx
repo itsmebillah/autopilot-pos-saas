@@ -3,10 +3,10 @@
 import { useEffect, useState } from "react";
 import Sidebar from "@/components/Sidebar";
 import { TrendingUp, Package, Users, AlertTriangle, LogOut } from "lucide-react";
-import { useRouter } from "next/navigation";
+import { useAuth } from "@/lib/auth-context";
 
 export default function DashboardPage() {
-  const router = useRouter();
+  const { signOut } = useAuth();
   const [stats, setStats] = useState({
     totalProducts: 0,
     totalCustomers: 0,
@@ -40,32 +40,30 @@ export default function DashboardPage() {
     loadDashboard();
   }, []);
 
-  function handleLogout() {
-    router.push("/");
-  }
-
   return (
     <div className="min-h-screen bg-slate-50 dark:bg-black text-slate-900 dark:text-white flex flex-col lg:flex-row transition-colors">
       <Sidebar />
 
       <main className="flex-1 w-full max-w-7xl mx-auto p-4 sm:p-6 lg:p-8">
-        {/* Header Bar */}
-        <div className="flex flex-col sm:flex-row sm:items-center justify-between gap-4 mb-6 sm:mb-8 pb-4 border-b border-slate-200 dark:border-white/10">
-          <div>
-            <h1 className="text-2xl sm:text-3xl lg:text-4xl font-bold tracking-tight text-slate-900 dark:text-white">
+        {/* Compact Single-Row Header Bar */}
+        <div className="flex items-center justify-between gap-3 mb-6 sm:mb-8 pb-4 border-b border-slate-200 dark:border-white/10">
+          <div className="min-w-0 flex-1">
+            <h1 className="text-xl sm:text-2xl lg:text-3xl font-bold tracking-tight text-slate-900 dark:text-white truncate">
               Dashboard
             </h1>
-            <p className="text-sm sm:text-base text-slate-500 dark:text-gray-400 mt-1">
+            <p className="text-xs sm:text-sm text-slate-500 dark:text-gray-400 mt-0.5 truncate">
               Store operations overview & real-time metrics
             </p>
           </div>
 
           <button
-            onClick={handleLogout}
-            className="self-start sm:self-auto flex items-center gap-2 bg-red-500/10 dark:bg-red-500/20 text-red-600 dark:text-red-400 hover:bg-red-500 hover:text-white border border-red-500/30 px-4 py-2.5 rounded-xl text-sm font-medium transition-all focus:outline-none focus:ring-2 focus:ring-red-500"
+            type="button"
+            onClick={signOut}
+            aria-label="Logout"
+            className="shrink-0 flex items-center justify-center gap-1.5 min-h-[40px] px-3 sm:px-3.5 py-1.5 sm:py-2 text-xs font-semibold text-red-600 dark:text-red-400 bg-red-500/10 dark:bg-red-500/15 hover:bg-red-500 hover:text-white dark:hover:bg-red-500 dark:hover:text-white border border-red-500/20 dark:border-red-500/30 rounded-xl transition-all focus:outline-none focus:ring-2 focus:ring-red-500 cursor-pointer shadow-xs active:scale-95"
           >
-            <LogOut size={16} />
-            <span>Logout</span>
+            <LogOut size={15} />
+            <span className="hidden sm:inline">Logout</span>
           </button>
         </div>
 
