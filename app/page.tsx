@@ -6,12 +6,16 @@ import { Zap, LogIn, ArrowRight } from "lucide-react";
 
 import ThemeToggle from "@/components/ThemeToggle";
 
+import { supabaseBrowser } from "@/lib/supabase-browser";
+import { useAuth } from "@/lib/auth-context";
+
 export default function Home() {
   const [email, setEmail] = useState("");
   const [password, setPassword] = useState("");
   const [isLoading, setIsLoading] = useState(false);
   const [errorMessage, setErrorMessage] = useState<string | null>(null);
   const router = useRouter();
+  const { refreshSession } = useAuth();
 
   async function handleLogin(e: React.FormEvent) {
     e.preventDefault();
@@ -19,24 +23,18 @@ export default function Home() {
     setErrorMessage(null);
 
     try {
-      const res = await fetch("/api/login", {
-        method: "POST",
-        headers: {
-          "Content-Type": "application/json",
-        },
-        body: JSON.stringify({
-          email: email.trim(),
-          password,
-        }),
+      const { data, error } = await supabaseBrowser.auth.signInWithPassword({
+        email: email.trim(),
+        password,
       });
 
-      const data = await res.json();
-
-      if (data.success) {
-        router.push("/dashboard");
-      } else {
-        setErrorMessage(data.message || "Invalid credentials. Please try again.");
+      if (error || !data.user) {
+        setErrorMessage(error?.message || "Invalid credentials. Please try again.");
+        return;
       }
+
+      await refreshSession();
+      router.push("/dashboard");
     } catch (err) {
       console.error("Login error:", err);
       setErrorMessage("Network error occurred. Please check your connection.");

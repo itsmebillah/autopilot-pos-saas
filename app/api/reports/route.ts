@@ -1,8 +1,12 @@
 import { supabase } from "@/lib/supabase";
 import { NextResponse } from "next/server";
+import { requireAuth, requireRole } from "@/lib/auth-guard";
 
 export async function GET() {
   try {
+    const session = await requireAuth();
+    requireRole(session, ["owner", "manager"]);
+
     const [salesRes, productsRes, saleItemsRes] = await Promise.all([
       supabase.from("sales").select("*"),
       supabase.from("products").select("id, stock"),
@@ -49,10 +53,13 @@ export async function GET() {
       totalOrders: sales.length,
     });
   } catch (err: unknown) {
-    const error = err as Error;
-    return NextResponse.json({
-      success: false,
-      message: error.message || "Failed to generate report",
-    });
+    const error = err as Error & { status?: number };
+    return NextResponse.json(
+      {
+        success: false,
+        message: error.message || "Failed to generate report",
+      },
+      { status: error.status || 500 }
+    );
   }
 }

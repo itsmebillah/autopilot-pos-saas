@@ -1,16 +1,23 @@
 import { NextResponse } from "next/server";
 import { supabase } from "@/lib/supabase";
+import { requireAuth, requireRole } from "@/lib/auth-guard";
 
 export async function POST(req: Request) {
   try {
+    const session = await requireAuth();
+    requireRole(session, ["owner", "manager", "inventory"]);
+
     const body = await req.json();
     const { productId, adjustType, quantity, reason, notes } = body;
 
     if (!productId) {
-      return NextResponse.json({
-        success: false,
-        message: "Product ID is required",
-      });
+      return NextResponse.json(
+        {
+          success: false,
+          message: "Product ID is required",
+        },
+        { status: 400 }
+      );
     }
 
     // Fetch existing product
@@ -21,10 +28,13 @@ export async function POST(req: Request) {
       .single();
 
     if (fetchErr || !product) {
-      return NextResponse.json({
-        success: false,
-        message: "Product not found",
-      });
+      return NextResponse.json(
+        {
+          success: false,
+          message: "Product not found",
+        },
+        { status: 404 }
+      );
     }
 
     const currentStock = Number(product.stock) || 0;
@@ -36,10 +46,13 @@ export async function POST(req: Request) {
     else if (adjustType === "SET") newStock = qty;
 
     if (newStock < 0) {
-      return NextResponse.json({
-        success: false,
-        message: "Resulting stock cannot be negative",
-      });
+      return NextResponse.json(
+        {
+          success: false,
+          message: "Resulting stock cannot be negative",
+        },
+        { status: 400 }
+      );
     }
 
     // Update product stock
@@ -49,10 +62,28 @@ export async function POST(req: Request) {
       .eq("id", productId);
 
     if (updateErr) {
-      return NextResponse.json({
-        success: false,
-        message: updateErr.message,
-      });
+      return NextResponse.json(
+        {
+          success: false,
+          message: updateErr.message,
+        },
+        { status: 500 }
+      );
+    }
+
+    // Record immutable stock movement
+    try {
+      await supabase.from("stock_movements").insert([
+        {
+          movement_type: "ADJUSTMENT",
+          quantity: newStock - currentStock,
+          previous_stock: currentStock,
+          new_stock: newStock,
+          notes: `${reason || "MANUAL_ADJUSTMENT"}: ${notes || "Adjusted via inventory modal"} by ${session.profile.fullName}`,
+        },
+      ]);
+    } catch {
+      // Non-blocking
     }
 
     return NextResponse.json({
@@ -62,10 +93,13 @@ export async function POST(req: Request) {
       previousStock: currentStock,
     });
   } catch (err: unknown) {
-    const error = err as { message?: string };
-    return NextResponse.json({
-      success: false,
-      message: error.message || "Failed to adjust stock",
-    });
+    const error = err as Error & { status?: number };
+    return NextResponse.json(
+      {
+        success: false,
+        message: error.message || "Failed to adjust stock",
+      },
+      { status: error.status || 500 }
+    );
   }
 }

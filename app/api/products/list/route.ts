@@ -1,22 +1,32 @@
 import { supabase } from "@/lib/supabase";
 import { NextResponse } from "next/server";
+import { requireAuth } from "@/lib/auth-guard";
 
 export async function GET() {
+  try {
+    await requireAuth();
 
-  const { data, error } = await supabase
-    .from("products")
-    .select("*")
-    .order("created_at", { ascending: false });
+    const { data, error } = await supabase
+      .from("products")
+      .select("*")
+      .order("created_at", { ascending: false });
 
-  if (error) {
+    if (error) {
+      return NextResponse.json(
+        { success: false, message: error.message },
+        { status: 500 }
+      );
+    }
+
     return NextResponse.json({
-      success: false,
-      message: error.message,
+      success: true,
+      products: data || [],
     });
+  } catch (err: unknown) {
+    const error = err as Error & { status?: number };
+    return NextResponse.json(
+      { success: false, message: error.message || "Failed to load products" },
+      { status: error.status || 500 }
+    );
   }
-
-  return NextResponse.json({
-    success: true,
-    products: data,
-  });
 }

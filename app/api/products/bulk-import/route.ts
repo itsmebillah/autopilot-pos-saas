@@ -1,16 +1,23 @@
 import { NextResponse } from "next/server";
 import { supabase } from "@/lib/supabase";
+import { requireAuth, requireRole } from "@/lib/auth-guard";
 
 export async function POST(req: Request) {
   try {
+    const session = await requireAuth();
+    requireRole(session, ["owner", "manager", "inventory"]);
+
     const body = await req.json();
     const { products } = body;
 
     if (!Array.isArray(products) || products.length === 0) {
-      return NextResponse.json({
-        success: false,
-        message: "No products provided for import",
-      });
+      return NextResponse.json(
+        {
+          success: false,
+          message: "No products provided for import",
+        },
+        { status: 400 }
+      );
     }
 
     const payload = products.map((p) => ({
@@ -26,10 +33,13 @@ export async function POST(req: Request) {
     const { data, error } = await supabase.from("products").insert(payload).select();
 
     if (error) {
-      return NextResponse.json({
-        success: false,
-        message: error.message,
-      });
+      return NextResponse.json(
+        {
+          success: false,
+          message: error.message,
+        },
+        { status: 500 }
+      );
     }
 
     return NextResponse.json({
@@ -38,10 +48,13 @@ export async function POST(req: Request) {
       data,
     });
   } catch (err: unknown) {
-    const error = err as { message?: string };
-    return NextResponse.json({
-      success: false,
-      message: error.message || "Bulk import failed",
-    });
+    const error = err as Error & { status?: number };
+    return NextResponse.json(
+      {
+        success: false,
+        message: error.message || "Bulk import failed",
+      },
+      { status: error.status || 500 }
+    );
   }
 }

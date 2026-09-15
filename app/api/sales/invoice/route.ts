@@ -1,9 +1,12 @@
 import { supabase } from "@/lib/supabase";
 import { NextResponse } from "next/server";
 import { buildInvoiceData } from "@/lib/invoice-engine";
+import { requireAuth } from "@/lib/auth-guard";
 
 export async function GET(req: Request) {
   try {
+    await requireAuth();
+
     const { searchParams } = new URL(req.url);
     const saleId = searchParams.get("id");
     const invoiceNo = searchParams.get("invoice_no");
@@ -58,10 +61,10 @@ export async function GET(req: Request) {
       invoice,
     });
   } catch (err: unknown) {
-    const error = err as Error;
+    const error = err as Error & { status?: number };
     return NextResponse.json(
       { success: false, message: error.message || "Failed to load invoice" },
-      { status: 500 }
+      { status: error.status || 500 }
     );
   }
 }

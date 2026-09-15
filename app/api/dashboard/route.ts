@@ -1,8 +1,11 @@
 import { supabase } from "@/lib/supabase";
 import { NextResponse } from "next/server";
+import { requireAuth } from "@/lib/auth-guard";
 
 export async function GET() {
   try {
+    await requireAuth();
+
     const [productsRes, customersRes, salesRes] = await Promise.all([
       supabase.from("products").select("id, stock, sell_price"),
       supabase.from("customers").select("id"),
@@ -28,10 +31,13 @@ export async function GET() {
       lowStockProducts,
     });
   } catch (err: unknown) {
-    const error = err as Error;
-    return NextResponse.json({
-      success: false,
-      message: error.message || "Failed to load dashboard metrics",
-    });
+    const error = err as Error & { status?: number };
+    return NextResponse.json(
+      {
+        success: false,
+        message: error.message || "Failed to load dashboard metrics",
+      },
+      { status: error.status || 500 }
+    );
   }
 }

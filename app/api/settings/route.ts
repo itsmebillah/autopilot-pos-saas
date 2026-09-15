@@ -1,8 +1,11 @@
 import { supabase } from "@/lib/supabase";
 import { NextResponse } from "next/server";
+import { requireAuth, requireRole } from "@/lib/auth-guard";
 
 export async function GET() {
   try {
+    await requireAuth();
+
     const { data, error } = await supabase
       .from("settings")
       .select("*")
@@ -10,10 +13,13 @@ export async function GET() {
       .single();
 
     if (error && error.code !== "PGRST116") {
-      return NextResponse.json({
-        success: false,
-        message: error.message,
-      });
+      return NextResponse.json(
+        {
+          success: false,
+          message: error.message,
+        },
+        { status: 500 }
+      );
     }
 
     return NextResponse.json({
@@ -31,16 +37,22 @@ export async function GET() {
       },
     });
   } catch (err: unknown) {
-    const error = err as Error;
-    return NextResponse.json({
-      success: false,
-      message: error.message || "Failed to load settings",
-    });
+    const error = err as Error & { status?: number };
+    return NextResponse.json(
+      {
+        success: false,
+        message: error.message || "Failed to load settings",
+      },
+      { status: error.status || 500 }
+    );
   }
 }
 
 export async function POST(req: Request) {
   try {
+    const session = await requireAuth();
+    requireRole(session, ["owner", "manager"]);
+
     const body = await req.json();
 
     const {
@@ -99,10 +111,13 @@ export async function POST(req: Request) {
       message: "Store & Invoice settings updated successfully",
     });
   } catch (err: unknown) {
-    const error = err as Error;
-    return NextResponse.json({
-      success: false,
-      message: error.message || "Server Error",
-    });
+    const error = err as Error & { status?: number };
+    return NextResponse.json(
+      {
+        success: false,
+        message: error.message || "Server Error",
+      },
+      { status: error.status || 500 }
+    );
   }
 }

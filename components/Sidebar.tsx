@@ -16,10 +16,13 @@ import {
 } from "lucide-react";
 
 import ThemeToggle from "@/components/ThemeToggle";
+import { useAuth } from "@/lib/auth-context";
+import { User, LogOut } from "lucide-react";
 
 export default function Sidebar() {
   const [isOpen, setIsOpen] = useState(false);
   const pathname = usePathname();
+  const { user, signOut } = useAuth();
 
   // Auto-close mobile drawer on route change
   useEffect(() => {
@@ -127,6 +130,34 @@ export default function Sidebar() {
         </div>
 
         <div className="space-y-3 pt-4 border-t border-gray-200 dark:border-white/10">
+          {/* User Profile Badge & Logout (Mobile) */}
+          {user && (
+            <div className="p-3 rounded-2xl bg-slate-100 dark:bg-white/5 border border-slate-200 dark:border-white/10">
+              <div className="flex items-center justify-between mb-2">
+                <div className="flex items-center gap-2 truncate">
+                  <div className="w-8 h-8 rounded-full bg-green-500/20 text-green-600 dark:text-green-400 flex items-center justify-center font-bold text-xs shrink-0">
+                    <User size={16} />
+                  </div>
+                  <div className="truncate">
+                    <p className="text-xs font-bold text-slate-900 dark:text-white truncate">{user.fullName}</p>
+                    <p className="text-[10px] text-slate-500 dark:text-gray-400 truncate">{user.email || user.organizationName}</p>
+                  </div>
+                </div>
+                <span className="px-2 py-0.5 rounded-full text-[9px] font-bold uppercase tracking-wider bg-green-500/10 dark:bg-green-500/20 text-green-700 dark:text-green-400 border border-green-500/30">
+                  {user.role}
+                </span>
+              </div>
+              <button
+                type="button"
+                onClick={signOut}
+                className="w-full flex items-center justify-center gap-1.5 py-1.5 text-xs font-semibold text-red-600 dark:text-red-400 hover:bg-red-500/10 rounded-xl transition-colors cursor-pointer"
+              >
+                <LogOut size={13} />
+                <span>Sign Out</span>
+              </button>
+            </div>
+          )}
+
           <ThemeToggle showLabel />
           <div className="text-xs text-gray-500 text-center">
             Autopilot POS SaaS v3.2
@@ -168,6 +199,34 @@ export default function Sidebar() {
         </div>
 
         <div className="space-y-3 pt-4 border-t border-gray-200 dark:border-white/10 px-1">
+          {/* User Profile Badge & Logout (Desktop) */}
+          {user && (
+            <div className="p-3 rounded-2xl bg-slate-100 dark:bg-white/5 border border-slate-200 dark:border-white/10">
+              <div className="flex items-center justify-between mb-2">
+                <div className="flex items-center gap-2 truncate">
+                  <div className="w-8 h-8 rounded-full bg-green-500/20 text-green-600 dark:text-green-400 flex items-center justify-center font-bold text-xs shrink-0">
+                    <User size={16} />
+                  </div>
+                  <div className="truncate">
+                    <p className="text-xs font-bold text-slate-900 dark:text-white truncate">{user.fullName}</p>
+                    <p className="text-[10px] text-slate-500 dark:text-gray-400 truncate">{user.email || user.organizationName}</p>
+                  </div>
+                </div>
+                <span className="px-2 py-0.5 rounded-full text-[9px] font-bold uppercase tracking-wider bg-green-500/10 dark:bg-green-500/20 text-green-700 dark:text-green-400 border border-green-500/30">
+                  {user.role}
+                </span>
+              </div>
+              <button
+                type="button"
+                onClick={signOut}
+                className="w-full flex items-center justify-center gap-1.5 py-1.5 text-xs font-semibold text-red-600 dark:text-red-400 hover:bg-red-500/10 rounded-xl transition-colors cursor-pointer"
+              >
+                <LogOut size={13} />
+                <span>Sign Out</span>
+              </button>
+            </div>
+          )}
+
           <ThemeToggle showLabel />
           <div className="text-xs text-gray-500 flex items-center justify-between px-1">
             <span>v3.2.0 Stable</span>

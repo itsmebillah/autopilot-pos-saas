@@ -1,9 +1,14 @@
 import { supabase } from "@/lib/supabase";
 import { NextResponse } from "next/server";
 import { generateStoreBarcode } from "@/lib/barcode-engine";
+import { requireAuth, requireRole } from "@/lib/auth-guard";
 
 export async function POST(req: Request) {
   try {
+    // 0. Enforce Authentication & Role
+    const session = await requireAuth();
+    requireRole(session, ["owner", "manager", "inventory"]);
+
     const body = await req.json();
     const {
       name,
@@ -95,11 +100,12 @@ export async function POST(req: Request) {
       product: data,
     });
   } catch (err: unknown) {
-    const error = err as Error;
-    console.error("API /api/products exception:", error);
+    const error = err as Error & { status?: number };
+    const status = error.status || 500;
+    if (status >= 500) console.error("API /api/products exception:", error);
     return NextResponse.json(
       { success: false, message: error.message || "An unexpected server error occurred." },
-      { status: 500 }
+      { status }
     );
   }
 }

@@ -1,9 +1,12 @@
 import { supabase } from "@/lib/supabase";
 import { NextResponse } from "next/server";
 import { generateInvoiceNumber, buildInvoiceData } from "@/lib/invoice-engine";
+import { requireAuth } from "@/lib/auth-guard";
 
 export async function POST(req: Request) {
   try {
+    const session = await requireAuth();
+
     const body = await req.json();
     const {
       cart = [],
@@ -158,6 +161,7 @@ export async function POST(req: Request) {
       ...saleData,
       customer_name,
       customer_phone,
+      biller_name: session.profile.fullName,
     };
 
     const invoice = buildInvoiceData(
@@ -174,10 +178,10 @@ export async function POST(req: Request) {
       invoice,
     });
   } catch (err: unknown) {
-    const error = err as Error;
+    const error = err as Error & { status?: number };
     return NextResponse.json(
       { success: false, message: error.message || "Server Error" },
-      { status: 500 }
+      { status: error.status || 500 }
     );
   }
 }

@@ -1,8 +1,12 @@
 import { supabase } from "@/lib/supabase";
 import { NextResponse } from "next/server";
+import { requireAuth, requireRole } from "@/lib/auth-guard";
 
 export async function POST(req: Request) {
   try {
+    const session = await requireAuth();
+    requireRole(session, ["owner", "manager", "inventory"]);
+
     const body = await req.json();
     const {
       id,
@@ -82,10 +86,10 @@ export async function POST(req: Request) {
       message: "Product updated successfully",
     });
   } catch (err: unknown) {
-    const error = err as Error;
+    const error = err as Error & { status?: number };
     return NextResponse.json(
       { success: false, message: error.message || "Server Error" },
-      { status: 500 }
+      { status: error.status || 500 }
     );
   }
 }
