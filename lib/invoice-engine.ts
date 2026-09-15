@@ -99,15 +99,18 @@ export interface InvoiceData {
 export function formatCurrency(amount: number, config?: Partial<InvoiceConfig>): string {
   const symbol = config?.currency_symbol || "৳";
   const position = config?.currency_position || "BEFORE";
-  const formattedNumber = Number(amount || 0).toLocaleString("en-US", {
+  const num = Number(amount || 0);
+  const isNegative = num < 0;
+  const absNum = Math.abs(num);
+  const formattedNumber = absNum.toLocaleString("en-US", {
     minimumFractionDigits: 2,
     maximumFractionDigits: 2,
   });
 
   if (position === "AFTER") {
-    return `${formattedNumber} ${symbol}`;
+    return isNegative ? `-${formattedNumber} ${symbol}` : `${formattedNumber} ${symbol}`;
   }
-  return `${symbol}${formattedNumber}`;
+  return isNegative ? `-${symbol} ${formattedNumber}` : `${symbol} ${formattedNumber}`;
 }
 
 /**

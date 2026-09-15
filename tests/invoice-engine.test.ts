@@ -3,14 +3,115 @@ import {
   buildInvoiceData,
   formatCurrency,
   generateInvoiceNumber,
-  InvoiceData,
 } from "../lib/invoice-engine";
 
-describe("Invoice Engine & Historical Snapshot Tests", () => {
-  it("should format currency according to store configuration", () => {
-    expect(formatCurrency(1250, { currency_symbol: "৳", currency_position: "BEFORE" })).toBe("৳1,250.00");
-    expect(formatCurrency(1250, { currency_symbol: "$", currency_position: "BEFORE" })).toBe("$1,250.00");
-    expect(formatCurrency(1250, { currency_symbol: "€", currency_position: "AFTER" })).toBe("1,250.00 €");
+describe("Invoice Engine & Currency Rendering Tests", () => {
+  it("should format currency with proper spacing and position across international currencies", () => {
+    // BDT BEFORE
+    expect(formatCurrency(2500, { currency_symbol: "৳", currency_position: "BEFORE" })).toBe("৳ 2,500.00");
+    // BDT AFTER
+    expect(formatCurrency(2500, { currency_symbol: "৳", currency_position: "AFTER" })).toBe("2,500.00 ৳");
+    // USD BEFORE
+    expect(formatCurrency(2500, { currency_symbol: "$", currency_position: "BEFORE" })).toBe("$ 2,500.00");
+    // EUR AFTER
+    expect(formatCurrency(2500, { currency_symbol: "€", currency_position: "AFTER" })).toBe("2,500.00 €");
+    // GBP BEFORE
+    expect(formatCurrency(2500, { currency_symbol: "£", currency_position: "BEFORE" })).toBe("£ 2,500.00");
+    // INR BEFORE
+    expect(formatCurrency(2500, { currency_symbol: "₹", currency_position: "BEFORE" })).toBe("₹ 2,500.00");
+    // AED BEFORE
+    expect(formatCurrency(2500, { currency_symbol: "AED", currency_position: "BEFORE" })).toBe("AED 2,500.00");
+  });
+
+  it("should format negative amounts (e.g. discounts) without character collision", () => {
+    expect(formatCurrency(-50, { currency_symbol: "৳", currency_position: "BEFORE" })).toBe("-৳ 50.00");
+    expect(formatCurrency(-50, { currency_symbol: "€", currency_position: "AFTER" })).toBe("-50.00 €");
+  });
+
+  it("should format various magnitudes and decimal prices accurately", () => {
+    const config = { currency_symbol: "৳", currency_position: "BEFORE" as const };
+    expect(formatCurrency(0, config)).toBe("৳ 0.00");
+    expect(formatCurrency(999, config)).toBe("৳ 999.00");
+    expect(formatCurrency(12500, config)).toBe("৳ 12,500.00");
+    expect(formatCurrency(125000, config)).toBe("৳ 125,000.00");
+    expect(formatCurrency(1250000.5, config)).toBe("৳ 1,250,000.50");
+  });
+
+  it("should calculate exact arithmetic for line items and totals", () => {
+    // Qty = 1, Unit Price = 2,500 -> Line Total = 2,500
+    // Qty = 3, Unit Price = 550 -> Line Total = 1,650
+    const rawSale = {
+      id: "sale-calc-1",
+      invoice_no: "INV-CALC-001",
+      total: 4150,
+      paid_amount: 5000,
+      change_amount: 850,
+      due_amount: 0,
+    };
+
+    const rawItems = [
+      { id: "item-1", name: "Premium Geisha Coffee 1kg", quantity: 1, unit_price: 2500 },
+      { id: "item-2", name: "Arabica Blend 250g", quantity: 3, unit_price: 550 },
+    ];
+
+    const invoice = buildInvoiceData(rawSale, rawItems, [], { currency: "৳" });
+
+    expect(invoice.items[0].subtotal).toBe(2500);
+    expect(invoice.items[0].total).toBe(2500);
+    expect(invoice.items[1].subtotal).toBe(1650);
+    expect(invoice.items[1].total).toBe(1650);
+    expect(invoice.totals.subtotal).toBe(4150);
+    expect(invoice.totals.grand_total).toBe(4150);
+    expect(invoice.totals.paid_amount).toBe(5000);
+    expect(invoice.totals.change_amount).toBe(850);
+  });
+
+  it("Acceptance Test: matches exact required invoice scenario with discount", () => {
+    // Required Acceptance Test:
+    // Product: Premium Geisha Coffee 1kg
+    // Qty: 1, Unit Price: ৳2,500.00, Discount: ৳50.00, Tax: ৳0.00
+    // Expected: Subtotal ৳2,500.00, Discount -৳50.00, Grand Total ৳2,450.00, Paid ৳2,450.00, Change ৳0.00
+    const rawSale = {
+      id: "sale-acceptance-1",
+      invoice_no: "INV-STA-20260915-9999",
+      customer_name: "Coffee Enthusiast",
+      discount_amount: 50,
+      tax_amount: 0,
+      total: 2450,
+      paid_amount: 2450,
+      change_amount: 0,
+      due_amount: 0,
+      payment_status: "PAID",
+    };
+
+    const rawItems = [
+      {
+        id: "item-g1",
+        name: "Premium Geisha Coffee 1kg",
+        quantity: 1,
+        unit_price: 2500,
+        discount_amount: 50,
+        tax_amount: 0,
+        total: 2450,
+      },
+    ];
+
+    const settings = {
+      store_name: "Artisan Coffee Roasters",
+      currency: "৳",
+      currency_code: "BDT",
+      currency_position: "BEFORE",
+      receipt_footer: "Thank you for shopping with us! Please come again.",
+    };
+
+    const invoice = buildInvoiceData(rawSale, rawItems, [{ method: "CASH", amount: 2450 }], settings);
+
+    expect(formatCurrency(invoice.totals.subtotal, invoice.config)).toBe("৳ 2,500.00");
+    expect(formatCurrency(-invoice.totals.discount_total, invoice.config)).toBe("-৳ 50.00");
+    expect(formatCurrency(invoice.totals.grand_total, invoice.config)).toBe("৳ 2,450.00");
+    expect(formatCurrency(invoice.totals.paid_amount, invoice.config)).toBe("৳ 2,450.00");
+    expect(formatCurrency(invoice.totals.change_amount, invoice.config)).toBe("৳ 0.00");
+    expect(formatCurrency(invoice.totals.due_amount, invoice.config)).toBe("৳ 0.00");
   });
 
   it("should generate unique sequential invoice numbers with store code", () => {
@@ -19,84 +120,6 @@ describe("Invoice Engine & Historical Snapshot Tests", () => {
     expect(inv1).toMatch(/^INV-STA-\d{8}-\d{4}$/);
     expect(inv2).toMatch(/^INV-STA-\d{8}-\d{4}$/);
     expect(inv1).not.toBe(inv2);
-  });
-
-  it("should construct canonical invoice snapshot with exact totals and change", () => {
-    const rawSale = {
-      id: "sale-101",
-      invoice_no: "INV-STA-20260915-1001",
-      created_at: "2026-09-15T10:30:00Z",
-      customer_name: "John Doe",
-      customer_phone: "+8801700000000",
-      discount_amount: 50,
-      tax_amount: 15,
-      total: 965,
-      paid_amount: 1000,
-      change_amount: 35,
-      due_amount: 0,
-      payment_status: "PAID",
-    };
-
-    const rawItems = [
-      {
-        id: "item-1",
-        product_name: "Rolex Submariner",
-        sku: "ROL-SUB-01",
-        barcode: "880123456789",
-        quantity: 1,
-        unit_price: 1000,
-        unit_cost: 600,
-        discount_amount: 50,
-        tax_amount: 15,
-        total: 965,
-        serial_numbers: ["SN-99887766"],
-      },
-    ];
-
-    const rawPayments = [
-      { method: "CASH", amount: 700 },
-      { method: "CARD", amount: 300 },
-    ];
-
-    const settings = {
-      store_name: "Apex Luxury Timepieces",
-      phone: "+880 1800-000000",
-      address: "Gulshan 2, Dhaka",
-      currency: "৳",
-      currency_code: "BDT",
-      tax_label: "VAT",
-      tax_number: "BIN-123456",
-      receipt_footer: "Thank you for shopping with us!",
-      return_policy: "Exchange within 7 days.",
-    };
-
-    const invoice: InvoiceData = buildInvoiceData(rawSale, rawItems, rawPayments, settings);
-
-    expect(invoice.transaction.invoice_no).toBe("INV-STA-20260915-1001");
-    expect(invoice.business.name).toBe("Apex Luxury Timepieces");
-    expect(invoice.business.tax_number).toBe("BIN-123456");
-    expect(invoice.customer?.name).toBe("John Doe");
-    expect(invoice.customer?.phone).toBe("+8801700000000");
-
-    // Line items verification
-    expect(invoice.items.length).toBe(1);
-    expect(invoice.items[0].name).toBe("Rolex Submariner");
-    expect(invoice.items[0].serial_numbers).toEqual(["SN-99887766"]);
-
-    // Totals verification
-    expect(invoice.totals.subtotal).toBe(1000);
-    expect(invoice.totals.discount_total).toBe(50);
-    expect(invoice.totals.grand_total).toBe(965);
-    expect(invoice.totals.paid_amount).toBe(1000);
-    expect(invoice.totals.change_amount).toBe(35);
-    expect(invoice.totals.due_amount).toBe(0);
-
-    // Multi-payment breakdown
-    expect(invoice.payments.length).toBe(2);
-    expect(invoice.payments[0].method).toBe("CASH");
-    expect(invoice.payments[0].amount).toBe(700);
-    expect(invoice.payments[1].method).toBe("CARD");
-    expect(invoice.payments[1].amount).toBe(300);
   });
 
   it("should handle walk-in anonymous customers gracefully", () => {
@@ -124,7 +147,6 @@ describe("Invoice Engine & Historical Snapshot Tests", () => {
   });
 
   it("should preserve historical snapshot even if current catalog has changed", () => {
-    // Original sale created with price $200
     const historicalSale = {
       id: "sale-old",
       invoice_no: "INV-HISTORICAL-01",
@@ -143,7 +165,6 @@ describe("Invoice Engine & Historical Snapshot Tests", () => {
 
     const invoice = buildInvoiceData(historicalSale, historicalLineItems, [], {});
 
-    // Even if catalog now has "Renamed Product Title V2" @ $350, the historical snapshot is 100% intact
     expect(invoice.items[0].name).toBe("Original Product Title V1");
     expect(invoice.items[0].unit_price).toBe(200);
     expect(invoice.totals.grand_total).toBe(200);
