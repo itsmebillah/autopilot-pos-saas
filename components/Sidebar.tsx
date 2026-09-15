@@ -18,6 +18,7 @@ import {
   LogOut,
   Shield,
   Users,
+  ArrowLeft,
 } from "lucide-react";
 
 import ThemeToggle from "@/components/ThemeToggle";
@@ -50,7 +51,7 @@ export default function Sidebar() {
   const navItems = [
     { href: "/dashboard", label: "Dashboard", icon: LayoutDashboard },
     { href: "/dashboard/sales", label: "Sales POS", icon: ShoppingCart },
-    { href: "/dashboard/products", label: "Products", icon: Package },
+    { href: "/dashboard/products", label: "Products & Stock", icon: Package },
     { href: "/dashboard/orders", label: "Orders History", icon: Receipt },
     ...(isManagement
       ? [
@@ -64,22 +65,41 @@ export default function Sidebar() {
   return (
     <>
       {/* Mobile Top Navigation Bar (Hidden on lg+ desktops) */}
-      <header className="lg:hidden sticky top-0 z-40 flex items-center justify-between px-4 py-3 bg-white/90 dark:bg-gray-950/90 backdrop-blur-md border-b border-gray-200 dark:border-white/10 w-full print:hidden transition-colors">
-        <Link href="/dashboard" className="flex items-center gap-2 text-gray-900 dark:text-white font-bold text-lg">
-          <Store className="text-green-600 dark:text-green-500 w-6 h-6" />
-          <span>Autopilot POS</span>
-        </Link>
+      <header className="lg:hidden sticky top-0 z-40 flex items-center justify-between px-3.5 py-2.5 bg-white/95 dark:bg-gray-950/95 backdrop-blur-md border-b border-gray-200 dark:border-white/10 w-full print:hidden transition-colors">
+        <div className="flex items-center gap-2 min-w-0">
+          {pathname !== "/dashboard" && (
+            <Link
+              href="/dashboard"
+              className="p-1.5 -ml-1 text-slate-700 dark:text-slate-200 hover:bg-slate-100 dark:hover:bg-white/10 rounded-xl transition-colors shrink-0"
+              title="Back to Dashboard"
+              aria-label="Back to Dashboard"
+            >
+              <ArrowLeft size={19} />
+            </Link>
+          )}
 
-        <div className="flex items-center gap-2">
+          <Link href="/dashboard" className="flex items-center gap-2 text-gray-900 dark:text-white font-bold text-base tracking-tight truncate">
+            <Store className="text-green-600 dark:text-green-500 w-5 h-5 shrink-0" />
+            <span className="truncate font-black">Autopilot POS</span>
+          </Link>
+        </div>
+
+        <div className="flex items-center gap-2 shrink-0">
+          {user?.activeStore && (
+            <span className="hidden xs:inline-flex items-center gap-1 px-2 py-0.5 rounded-full text-[9px] font-bold uppercase tracking-wider bg-green-500/10 text-green-700 dark:text-green-400 border border-green-500/20 max-w-[120px] truncate">
+              <span className="w-1.5 h-1.5 rounded-full bg-green-500 shrink-0" />
+              <span className="truncate">{user.activeStore.name}</span>
+            </span>
+          )}
           <ThemeToggle compact />
           <button
             type="button"
             onClick={() => setIsOpen(!isOpen)}
-            className="p-2 rounded-xl bg-gray-100 dark:bg-white/10 text-gray-700 dark:text-white hover:bg-gray-200 dark:hover:bg-white/20 transition-colors focus:outline-none focus:ring-2 focus:ring-green-500"
+            className="p-2 rounded-xl bg-gray-100 dark:bg-white/10 text-gray-700 dark:text-white hover:bg-gray-200 dark:hover:bg-white/20 transition-colors focus:outline-none focus:ring-2 focus:ring-green-500 cursor-pointer"
             aria-label={isOpen ? "Close menu" : "Open menu"}
             aria-expanded={isOpen}
           >
-            {isOpen ? <X size={22} /> : <Menu size={22} />}
+            {isOpen ? <X size={20} /> : <Menu size={20} />}
           </button>
         </div>
       </header>

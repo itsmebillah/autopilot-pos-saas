@@ -1,6 +1,7 @@
 "use client";
 
 import React, { useState, useEffect, useCallback } from "react";
+import Sidebar from "@/components/Sidebar";
 import {
   Users,
   UserPlus,
@@ -15,6 +16,9 @@ import {
   Briefcase,
   UserCheck,
   UserX,
+  Mail,
+  Phone,
+  Calendar,
 } from "lucide-react";
 import { useAuth } from "@/lib/auth-context";
 
@@ -153,8 +157,9 @@ export default function EmployeesPage() {
         phone: "",
       });
       await fetchEmployees();
-    } catch (err: any) {
-      setFormError(err.message || "Failed to create employee");
+    } catch (err: unknown) {
+      const error = err as Error;
+      setFormError(error.message || "Failed to create employee");
     } finally {
       setIsSubmitting(false);
     }
@@ -183,8 +188,9 @@ export default function EmployeesPage() {
       setIsEditOpen(false);
       setEditingEmployee(null);
       await fetchEmployees();
-    } catch (err: any) {
-      setFormError(err.message || "Failed to update employee");
+    } catch (err: unknown) {
+      const error = err as Error;
+      setFormError(error.message || "Failed to update employee");
     } finally {
       setIsSubmitting(false);
     }
@@ -250,365 +256,490 @@ export default function EmployeesPage() {
   const isOwner = user?.role === "owner" || user?.isSuperAdmin;
 
   return (
-    <div className="space-y-8">
-      {/* Top Header */}
-      <div className="flex flex-col sm:flex-row sm:items-center justify-between gap-4">
-        <div>
-          <div className="flex items-center gap-2.5">
-            <h1 className="text-2xl sm:text-3xl font-black tracking-tight text-slate-900 dark:text-white">
-              Employee & Staff Management
-            </h1>
-            <span className="px-2.5 py-0.5 rounded-full text-[10px] font-bold uppercase bg-green-500/10 text-green-700 dark:text-green-400 border border-green-500/20">
-              {user?.organizationName || "Store Staff"}
-            </span>
+    <div className="min-h-screen bg-slate-50 dark:bg-black text-slate-900 dark:text-white flex flex-col lg:flex-row transition-colors">
+      <Sidebar />
+
+      <main className="flex-1 w-full max-w-7xl mx-auto p-3.5 sm:p-6 lg:p-8 space-y-4 sm:space-y-6">
+        {/* Compact POS Header */}
+        <div className="flex flex-col sm:flex-row sm:items-center justify-between gap-3 pb-3 sm:pb-4 border-b border-slate-200 dark:border-white/10">
+          <div className="min-w-0">
+            <div className="flex items-center gap-2 flex-wrap">
+              <h1 className="text-xl sm:text-2xl lg:text-3xl font-bold tracking-tight text-slate-900 dark:text-white truncate">
+                Employee Management
+              </h1>
+              <span className="inline-flex items-center gap-1 px-2.5 py-0.5 rounded-full text-[10px] font-bold uppercase bg-green-500/10 text-green-700 dark:text-green-400 border border-green-500/20 max-w-[160px] truncate">
+                <Store size={11} className="shrink-0" />
+                <span className="truncate">{user?.activeStore?.name || user?.organizationName || "REYON WATCH"}</span>
+              </span>
+            </div>
+            <p className="text-xs sm:text-sm text-slate-500 dark:text-gray-400 mt-0.5">
+              Staff team directory, RBAC roles & outlet permissions
+            </p>
           </div>
-          <p className="text-sm text-slate-500 dark:text-slate-400 mt-1">
-            Manage store team members, RBAC role permissions, and outlet assignments.
-          </p>
+
+          <div className="flex items-center gap-2 shrink-0">
+            <button
+              onClick={() => fetchEmployees()}
+              title="Refresh Data"
+              className="p-2 sm:p-2.5 rounded-xl bg-white dark:bg-slate-900 border border-slate-200 dark:border-slate-800 text-slate-600 dark:text-slate-300 hover:bg-slate-100 dark:hover:bg-slate-800 transition-colors shadow-sm cursor-pointer"
+            >
+              <RefreshCw size={16} className={isLoading ? "animate-spin" : ""} />
+            </button>
+
+            {isOwner && (
+              <button
+                onClick={() => {
+                  setFormError(null);
+                  setIsAddOpen(true);
+                }}
+                className="flex items-center gap-1.5 px-3.5 sm:px-4 py-2 sm:py-2.5 rounded-xl bg-gradient-to-r from-green-600 to-emerald-600 hover:from-green-500 hover:to-emerald-500 text-white text-xs sm:text-sm font-bold shadow-md shadow-green-600/20 transition-all active:scale-95 cursor-pointer"
+              >
+                <UserPlus size={16} />
+                <span>Add Employee</span>
+              </button>
+            )}
+          </div>
         </div>
 
-        <div className="flex items-center gap-3">
-          <button
-            onClick={() => fetchEmployees()}
-            title="Refresh Data"
-            className="p-2.5 rounded-xl bg-white dark:bg-slate-900 border border-slate-200 dark:border-slate-800 text-slate-600 dark:text-slate-300 hover:bg-slate-100 dark:hover:bg-slate-800 transition-colors shadow-sm"
-          >
-            <RefreshCw size={17} className={isLoading ? "animate-spin" : ""} />
-          </button>
-
-          {isOwner && (
+        {/* Password Recovery Feedback Banner */}
+        {recoveryLink && (
+          <div className="p-3.5 sm:p-4 rounded-2xl bg-indigo-500/10 border border-indigo-500/30 flex flex-col sm:flex-row sm:items-center justify-between gap-3">
+            <div className="flex items-center gap-2.5">
+              <KeyRound size={18} className="text-indigo-600 dark:text-indigo-400 shrink-0" />
+              <div className="min-w-0">
+                <p className="text-xs font-bold text-slate-900 dark:text-white">
+                  Password Link Generated for {recoveryLink.email}
+                </p>
+                <p className="text-[11px] text-slate-500 dark:text-slate-400 truncate max-w-md mt-0.5">
+                  Action Link: <code className="bg-slate-100 dark:bg-slate-800 px-1 py-0.5 rounded font-mono text-[10px]">{recoveryLink.link}</code>
+                </p>
+              </div>
+            </div>
             <button
               onClick={() => {
-                setFormError(null);
-                setIsAddOpen(true);
+                navigator.clipboard.writeText(recoveryLink.link);
+                alert("Recovery link copied to clipboard!");
               }}
-              className="flex items-center gap-2 px-4 py-2.5 rounded-xl bg-gradient-to-r from-green-600 to-emerald-600 hover:from-green-500 hover:to-emerald-500 text-white text-sm font-bold shadow-lg shadow-green-600/20 transition-all transform active:scale-95"
+              className="px-3 py-1.5 rounded-lg text-xs font-bold bg-indigo-600 hover:bg-indigo-500 text-white shrink-0 self-start sm:self-auto cursor-pointer"
             >
-              <UserPlus size={18} />
-              <span>Add Employee</span>
+              Copy Link
             </button>
-          )}
-        </div>
-      </div>
+          </div>
+        )}
 
-      {/* Password Recovery Feedback Banner */}
-      {recoveryLink && (
-        <div className="p-4 rounded-2xl bg-indigo-500/10 border border-indigo-500/30 flex items-center justify-between gap-4">
-          <div className="flex items-center gap-3">
-            <KeyRound size={20} className="text-indigo-600 dark:text-indigo-400 shrink-0" />
-            <div>
-              <p className="text-xs font-bold text-slate-900 dark:text-white">
-                Password Setup Link Generated for {recoveryLink.email}
-              </p>
-              <p className="text-[11px] text-slate-500 dark:text-slate-400 truncate max-w-lg">
-                Action Link: <code className="bg-slate-100 dark:bg-slate-800 px-1 py-0.5 rounded font-mono">{recoveryLink.link}</code>
-              </p>
+        {/* 6 Summary Metric Cards (Compact 2-col on mobile, 6-col on desktop) */}
+        <div className="grid grid-cols-2 sm:grid-cols-3 lg:grid-cols-6 gap-2 sm:gap-3">
+          <div className="p-3 sm:p-3.5 rounded-2xl bg-white dark:bg-slate-900 border border-slate-200 dark:border-slate-800 shadow-sm">
+            <div className="flex items-center justify-between text-slate-500 dark:text-slate-400 mb-1">
+              <span className="text-[10px] sm:text-xs font-bold uppercase tracking-wider">Total Staff</span>
+              <Users size={14} className="text-indigo-600 dark:text-indigo-400" />
+            </div>
+            <p className="text-xl sm:text-2xl font-black text-slate-900 dark:text-white">{totalEmployees}</p>
+          </div>
+
+          <div className="p-3 sm:p-3.5 rounded-2xl bg-white dark:bg-slate-900 border border-slate-200 dark:border-slate-800 shadow-sm">
+            <div className="flex items-center justify-between text-slate-500 dark:text-slate-400 mb-1">
+              <span className="text-[10px] sm:text-xs font-bold uppercase tracking-wider">Active</span>
+              <CheckCircle2 size={14} className="text-green-600 dark:text-green-400" />
+            </div>
+            <p className="text-xl sm:text-2xl font-black text-green-600 dark:text-green-400">{activeEmployees}</p>
+          </div>
+
+          <div className="p-3 sm:p-3.5 rounded-2xl bg-white dark:bg-slate-900 border border-slate-200 dark:border-slate-800 shadow-sm">
+            <div className="flex items-center justify-between text-slate-500 dark:text-slate-400 mb-1">
+              <span className="text-[10px] sm:text-xs font-bold uppercase tracking-wider">Inactive</span>
+              <XCircle size={14} className="text-red-500 dark:text-red-400" />
+            </div>
+            <p className="text-xl sm:text-2xl font-black text-red-500 dark:text-red-400">{inactiveEmployees}</p>
+          </div>
+
+          <div className="p-3 sm:p-3.5 rounded-2xl bg-white dark:bg-slate-900 border border-slate-200 dark:border-slate-800 shadow-sm">
+            <div className="flex items-center justify-between text-slate-500 dark:text-slate-400 mb-1">
+              <span className="text-[10px] sm:text-xs font-bold uppercase tracking-wider">Sales Staff</span>
+              <Briefcase size={14} className="text-green-600 dark:text-green-400" />
+            </div>
+            <p className="text-xl sm:text-2xl font-black text-slate-900 dark:text-white">{salesStaff}</p>
+          </div>
+
+          <div className="p-3 sm:p-3.5 rounded-2xl bg-white dark:bg-slate-900 border border-slate-200 dark:border-slate-800 shadow-sm">
+            <div className="flex items-center justify-between text-slate-500 dark:text-slate-400 mb-1">
+              <span className="text-[10px] sm:text-xs font-bold uppercase tracking-wider">Managers</span>
+              <Shield size={14} className="text-indigo-600 dark:text-indigo-400" />
+            </div>
+            <p className="text-xl sm:text-2xl font-black text-slate-900 dark:text-white">{managers}</p>
+          </div>
+
+          <div className="p-3 sm:p-3.5 rounded-2xl bg-white dark:bg-slate-900 border border-slate-200 dark:border-slate-800 shadow-sm">
+            <div className="flex items-center justify-between text-slate-500 dark:text-slate-400 mb-1">
+              <span className="text-[10px] sm:text-xs font-bold uppercase tracking-wider">Other Roles</span>
+              <Users size={14} className="text-amber-500 dark:text-amber-400" />
+            </div>
+            <p className="text-xl sm:text-2xl font-black text-slate-900 dark:text-white">{otherRoles}</p>
+          </div>
+        </div>
+
+        {/* Filter & Search Bar */}
+        <div className="p-3 sm:p-4 rounded-2xl bg-white dark:bg-slate-900 border border-slate-200 dark:border-slate-800 flex flex-col sm:flex-row items-center justify-between gap-2.5 sm:gap-3 shadow-sm">
+          <div className="relative w-full sm:w-72 md:w-80">
+            <Search size={15} className="absolute left-3.5 top-1/2 -translate-y-1/2 text-slate-400" />
+            <input
+              type="text"
+              placeholder="Search by name, email, phone..."
+              value={searchQuery}
+              onChange={(e) => setSearchQuery(e.target.value)}
+              className="w-full pl-9 pr-3.5 py-2 text-xs font-medium bg-slate-50 dark:bg-slate-800 text-slate-900 dark:text-white rounded-xl border border-slate-200 dark:border-slate-700 focus:outline-none focus:ring-2 focus:ring-green-500"
+            />
+          </div>
+
+          <div className="flex items-center gap-2 w-full sm:w-auto">
+            <div className="flex-1 sm:flex-initial">
+              <select
+                value={roleFilter}
+                onChange={(e) => setRoleFilter(e.target.value)}
+                className="w-full px-2.5 py-2 text-xs font-semibold bg-slate-50 dark:bg-slate-800 text-slate-900 dark:text-white rounded-xl border border-slate-200 dark:border-slate-700 focus:outline-none focus:ring-2 focus:ring-green-500 cursor-pointer"
+              >
+                <option value="all">All Roles</option>
+                <option value="owner">Shop Owner</option>
+                <option value="manager">Store Manager</option>
+                <option value="cashier">Sales Person / Cashier</option>
+                <option value="inventory">Inventory Staff</option>
+                <option value="accountant">Accountant</option>
+              </select>
+            </div>
+
+            <div className="flex-1 sm:flex-initial">
+              <select
+                value={statusFilter}
+                onChange={(e) => setStatusFilter(e.target.value)}
+                className="w-full px-2.5 py-2 text-xs font-semibold bg-slate-50 dark:bg-slate-800 text-slate-900 dark:text-white rounded-xl border border-slate-200 dark:border-slate-700 focus:outline-none focus:ring-2 focus:ring-green-500 cursor-pointer"
+              >
+                <option value="all">All Status</option>
+                <option value="active">Active Only</option>
+                <option value="inactive">Inactive Only</option>
+              </select>
             </div>
           </div>
-          <button
-            onClick={() => {
-              navigator.clipboard.writeText(recoveryLink.link);
-              alert("Recovery link copied to clipboard!");
-            }}
-            className="px-3 py-1.5 rounded-lg text-xs font-bold bg-indigo-600 hover:bg-indigo-500 text-white shrink-0"
-          >
-            Copy Link
-          </button>
-        </div>
-      )}
-
-      {/* 6 Summary Metric Cards */}
-      <div className="grid grid-cols-2 lg:grid-cols-6 gap-3 sm:gap-4">
-        <div className="p-4 rounded-2xl bg-white dark:bg-slate-900 border border-slate-200 dark:border-slate-800 shadow-sm">
-          <div className="flex items-center justify-between text-slate-500 dark:text-slate-400 mb-1">
-            <span className="text-xs font-bold uppercase tracking-wider">Total Staff</span>
-            <Users size={16} className="text-indigo-600 dark:text-indigo-400" />
-          </div>
-          <p className="text-2xl font-black text-slate-900 dark:text-white">{totalEmployees}</p>
         </div>
 
-        <div className="p-4 rounded-2xl bg-white dark:bg-slate-900 border border-slate-200 dark:border-slate-800 shadow-sm">
-          <div className="flex items-center justify-between text-slate-500 dark:text-slate-400 mb-1">
-            <span className="text-xs font-bold uppercase tracking-wider">Active</span>
-            <CheckCircle2 size={16} className="text-green-600 dark:text-green-400" />
-          </div>
-          <p className="text-2xl font-black text-green-600 dark:text-green-400">{activeEmployees}</p>
-        </div>
-
-        <div className="p-4 rounded-2xl bg-white dark:bg-slate-900 border border-slate-200 dark:border-slate-800 shadow-sm">
-          <div className="flex items-center justify-between text-slate-500 dark:text-slate-400 mb-1">
-            <span className="text-xs font-bold uppercase tracking-wider">Inactive</span>
-            <XCircle size={16} className="text-red-500 dark:text-red-400" />
-          </div>
-          <p className="text-2xl font-black text-red-500 dark:text-red-400">{inactiveEmployees}</p>
-        </div>
-
-        <div className="p-4 rounded-2xl bg-white dark:bg-slate-900 border border-slate-200 dark:border-slate-800 shadow-sm">
-          <div className="flex items-center justify-between text-slate-500 dark:text-slate-400 mb-1">
-            <span className="text-xs font-bold uppercase tracking-wider">Sales Staff</span>
-            <Briefcase size={16} className="text-green-600 dark:text-green-400" />
-          </div>
-          <p className="text-2xl font-black text-slate-900 dark:text-white">{salesStaff}</p>
-        </div>
-
-        <div className="p-4 rounded-2xl bg-white dark:bg-slate-900 border border-slate-200 dark:border-slate-800 shadow-sm">
-          <div className="flex items-center justify-between text-slate-500 dark:text-slate-400 mb-1">
-            <span className="text-xs font-bold uppercase tracking-wider">Managers</span>
-            <Shield size={16} className="text-indigo-600 dark:text-indigo-400" />
-          </div>
-          <p className="text-2xl font-black text-slate-900 dark:text-white">{managers}</p>
-        </div>
-
-        <div className="p-4 rounded-2xl bg-white dark:bg-slate-900 border border-slate-200 dark:border-slate-800 shadow-sm">
-          <div className="flex items-center justify-between text-slate-500 dark:text-slate-400 mb-1">
-            <span className="text-xs font-bold uppercase tracking-wider">Other Roles</span>
-            <Users size={16} className="text-amber-500 dark:text-amber-400" />
-          </div>
-          <p className="text-2xl font-black text-slate-900 dark:text-white">{otherRoles}</p>
-        </div>
-      </div>
-
-      {/* Filter & Search Bar */}
-      <div className="p-4 rounded-2xl bg-white dark:bg-slate-900 border border-slate-200 dark:border-slate-800 flex flex-col md:flex-row items-center justify-between gap-3 shadow-sm">
-        <div className="relative w-full md:w-80">
-          <Search size={16} className="absolute left-3.5 top-1/2 -translate-y-1/2 text-slate-400" />
-          <input
-            type="text"
-            placeholder="Search by name, email, phone..."
-            value={searchQuery}
-            onChange={(e) => setSearchQuery(e.target.value)}
-            className="w-full pl-9 pr-4 py-2 text-xs font-semibold bg-slate-50 dark:bg-slate-800 text-slate-900 dark:text-white rounded-xl border border-slate-200 dark:border-slate-700 focus:outline-none focus:ring-2 focus:ring-green-500"
-          />
-        </div>
-
-        <div className="flex flex-wrap items-center gap-2.5 w-full md:w-auto">
-          <div className="flex items-center gap-1.5">
-            <span className="text-xs font-bold text-slate-500 dark:text-slate-400">Role:</span>
-            <select
-              value={roleFilter}
-              onChange={(e) => setRoleFilter(e.target.value)}
-              className="px-3 py-1.5 text-xs font-semibold bg-slate-50 dark:bg-slate-800 text-slate-900 dark:text-white rounded-xl border border-slate-200 dark:border-slate-700 focus:outline-none focus:ring-2 focus:ring-green-500"
-            >
-              <option value="all">All Roles</option>
-              <option value="owner">Shop Owner</option>
-              <option value="manager">Store Manager</option>
-              <option value="cashier">Sales Person / Cashier</option>
-              <option value="inventory">Inventory Staff</option>
-              <option value="accountant">Accountant</option>
-            </select>
-          </div>
-
-          <div className="flex items-center gap-1.5">
-            <span className="text-xs font-bold text-slate-500 dark:text-slate-400">Status:</span>
-            <select
-              value={statusFilter}
-              onChange={(e) => setStatusFilter(e.target.value)}
-              className="px-3 py-1.5 text-xs font-semibold bg-slate-50 dark:bg-slate-800 text-slate-900 dark:text-white rounded-xl border border-slate-200 dark:border-slate-700 focus:outline-none focus:ring-2 focus:ring-green-500"
-            >
-              <option value="all">All</option>
-              <option value="active">Active Only</option>
-              <option value="inactive">Inactive Only</option>
-            </select>
-          </div>
-        </div>
-      </div>
-
-      {/* Employees Table / Card List */}
-      <div className="bg-white dark:bg-slate-900 rounded-3xl border border-slate-200 dark:border-slate-800 shadow-sm overflow-hidden">
-        <div className="px-6 py-4 border-b border-slate-200 dark:border-slate-800 flex items-center justify-between">
-          <h2 className="text-base font-bold text-slate-900 dark:text-white flex items-center gap-2">
-            <Users size={18} className="text-green-600 dark:text-green-400" />
+        {/* Directory Section Header */}
+        <div className="flex items-center justify-between px-1">
+          <h2 className="text-sm sm:text-base font-bold text-slate-900 dark:text-white flex items-center gap-2">
+            <Users size={16} className="text-green-600 dark:text-green-400" />
             <span>Store Staff Directory ({filteredEmployees.length})</span>
           </h2>
         </div>
 
+        {/* Loading State */}
         {isLoading ? (
-          <div className="p-12 text-center text-slate-500 dark:text-slate-400">
+          <div className="p-12 text-center rounded-3xl bg-white dark:bg-slate-900 border border-slate-200 dark:border-slate-800 text-slate-500 dark:text-slate-400">
             <RefreshCw size={24} className="animate-spin mx-auto mb-2 text-green-500" />
             <p className="text-xs">Loading employees...</p>
           </div>
         ) : filteredEmployees.length === 0 ? (
-          <div className="p-12 text-center">
+          /* Empty State */
+          <div className="p-12 text-center rounded-3xl bg-white dark:bg-slate-900 border border-slate-200 dark:border-slate-800">
             <Users size={36} className="mx-auto text-slate-300 dark:text-slate-700 mb-3" />
-            <h3 className="text-sm font-bold text-slate-900 dark:text-white">No Employees Found</h3>
+            <h3 className="text-sm font-bold text-slate-900 dark:text-white">No Staff Members Found</h3>
             <p className="text-xs text-slate-500 dark:text-slate-400 mt-1 max-w-sm mx-auto">
               No staff members match the selected filters. Click &quot;Add Employee&quot; to onboard staff.
             </p>
           </div>
         ) : (
-          <div className="overflow-x-auto">
-            <table className="w-full text-left border-collapse">
-              <thead>
-                <tr className="border-b border-slate-100 dark:border-slate-800 bg-slate-50/50 dark:bg-slate-800/30 text-[11px] font-extrabold uppercase tracking-wider text-slate-500 dark:text-slate-400">
-                  <th className="py-3.5 px-6">Employee</th>
-                  <th className="py-3.5 px-6">Role & Permissions</th>
-                  <th className="py-3.5 px-6">Assigned Outlet</th>
-                  <th className="py-3.5 px-6">Status</th>
-                  <th className="py-3.5 px-6">Joined Date</th>
-                  <th className="py-3.5 px-6 text-right">Actions</th>
-                </tr>
-              </thead>
-              <tbody className="divide-y divide-slate-100 dark:divide-slate-800 text-xs">
-                {filteredEmployees.map((emp) => {
-                  const roleConfig = ROLE_DESCRIPTIONS[emp.role.toLowerCase()] || ROLE_DESCRIPTIONS.cashier;
-                  const isSelf = emp.userId === user?.id;
+          <>
+            {/* MOBILE VIEW: Touch-Friendly Responsive Cards (sm:hidden) */}
+            <div className="sm:hidden space-y-2.5">
+              {filteredEmployees.map((emp) => {
+                const roleConfig = ROLE_DESCRIPTIONS[emp.role.toLowerCase()] || ROLE_DESCRIPTIONS.cashier;
+                const isSelf = emp.userId === user?.id;
 
-                  return (
-                    <tr
-                      key={emp.id}
-                      className="hover:bg-slate-50/80 dark:hover:bg-slate-800/40 transition-colors"
-                    >
-                      <td className="py-4 px-6">
-                        <div className="flex items-center gap-3">
-                          <div className="w-9 h-9 rounded-full bg-green-500/10 text-green-700 dark:text-green-400 flex items-center justify-center font-bold text-xs shrink-0">
-                            {emp.fullName.charAt(0).toUpperCase()}
-                          </div>
-                          <div>
-                            <div className="font-bold text-slate-900 dark:text-white text-sm flex items-center gap-1.5">
-                              <span>{emp.fullName}</span>
-                              {isSelf && (
-                                <span className="px-1.5 py-0.2 rounded text-[9px] font-bold bg-slate-200 dark:bg-slate-700 text-slate-700 dark:text-slate-300">
-                                  You
-                                </span>
-                              )}
-                            </div>
-                            <div className="text-slate-500 dark:text-slate-400 text-[11px] flex items-center gap-2">
-                              <span>{emp.email}</span>
-                              {emp.phone && <span>• {emp.phone}</span>}
-                            </div>
-                          </div>
+                return (
+                  <div
+                    key={emp.id}
+                    className="p-3.5 rounded-2xl bg-white dark:bg-slate-900 border border-slate-200 dark:border-slate-800 shadow-sm space-y-3"
+                  >
+                    {/* Card Header: Avatar, Name, Role & Status */}
+                    <div className="flex items-start justify-between gap-2">
+                      <div className="flex items-center gap-2.5 min-w-0">
+                        <div className="w-9 h-9 rounded-xl bg-green-500/10 text-green-700 dark:text-green-400 flex items-center justify-center font-bold text-xs shrink-0">
+                          {emp.fullName.charAt(0).toUpperCase()}
                         </div>
-                      </td>
-
-                      <td className="py-4 px-6">
-                        <span
-                          className={`inline-flex items-center gap-1.5 px-2.5 py-1 rounded-lg text-xs font-bold border ${roleConfig.badgeClass}`}
-                        >
-                          <Shield size={12} />
-                          {roleConfig.label}
-                        </span>
-                      </td>
-
-                      <td className="py-4 px-6">
-                        <div className="font-semibold text-slate-800 dark:text-slate-200 flex items-center gap-1.5">
-                          <Store size={13} className="text-green-600 dark:text-green-400" />
-                          <span>{emp.primaryStore?.name || "Main Outlet"}</span>
-                        </div>
-                      </td>
-
-                      <td className="py-4 px-6">
-                        {emp.isActive ? (
-                          <span className="inline-flex items-center gap-1.5 px-2.5 py-0.5 rounded-full text-[11px] font-bold bg-green-500/10 text-green-700 dark:text-green-400 border border-green-500/20">
-                            <span className="w-1.5 h-1.5 rounded-full bg-green-500 animate-pulse" />
-                            Active
-                          </span>
-                        ) : (
-                          <span className="inline-flex items-center gap-1.5 px-2.5 py-0.5 rounded-full text-[11px] font-bold bg-red-500/10 text-red-600 dark:text-red-400 border border-red-500/20">
-                            <span className="w-1.5 h-1.5 rounded-full bg-red-500" />
-                            Inactive
-                          </span>
-                        )}
-                      </td>
-
-                      <td className="py-4 px-6 text-slate-500 dark:text-slate-400 font-medium">
-                        {new Date(emp.createdAt).toLocaleDateString()}
-                      </td>
-
-                      <td className="py-4 px-6 text-right">
-                        {isOwner && (
-                          <div className="flex items-center justify-end gap-1.5">
-                            <button
-                              onClick={() => {
-                                setEditingEmployee(emp);
-                                setEditFormData({
-                                  fullName: emp.fullName,
-                                  phone: emp.phone || "",
-                                  role: emp.role,
-                                  storeId: emp.primaryStore?.id || stores[0]?.id || "",
-                                  isActive: emp.isActive,
-                                });
-                                setIsEditOpen(true);
-                              }}
-                              title="Edit Employee"
-                              className="p-1.5 rounded-lg text-slate-600 dark:text-slate-300 hover:bg-slate-100 dark:hover:bg-slate-800 transition-colors"
-                            >
-                              <Edit2 size={15} />
-                            </button>
-
-                            <button
-                              onClick={() => handleResetPassword(emp)}
-                              title="Generate Password Setup Link"
-                              className="p-1.5 rounded-lg text-indigo-600 dark:text-indigo-400 hover:bg-indigo-50 dark:hover:bg-indigo-950/40 transition-colors"
-                            >
-                              <KeyRound size={15} />
-                            </button>
-
-                            {!isSelf && (
-                              <button
-                                onClick={() => handleToggleStatus(emp)}
-                                title={emp.isActive ? "Deactivate" : "Activate"}
-                                className={`p-1.5 rounded-lg transition-colors ${
-                                  emp.isActive
-                                    ? "text-red-600 dark:text-red-400 hover:bg-red-50 dark:hover:bg-red-950/40"
-                                    : "text-green-600 dark:text-green-400 hover:bg-green-50 dark:hover:bg-green-950/40"
-                                }`}
-                              >
-                                {emp.isActive ? <UserX size={15} /> : <UserCheck size={15} />}
-                              </button>
+                        <div className="min-w-0">
+                          <div className="font-bold text-slate-900 dark:text-white text-sm flex items-center gap-1.5 truncate">
+                            <span className="truncate">{emp.fullName}</span>
+                            {isSelf && (
+                              <span className="px-1.5 py-0.2 rounded text-[9px] font-bold bg-slate-200 dark:bg-slate-700 text-slate-700 dark:text-slate-300 shrink-0">
+                                You
+                              </span>
                             )}
                           </div>
-                        )}
-                      </td>
-                    </tr>
-                  );
-                })}
-              </tbody>
-            </table>
-          </div>
-        )}
-      </div>
+                          <span
+                            className={`inline-flex items-center gap-1 px-2 py-0.5 rounded-md text-[10px] font-bold border mt-0.5 ${roleConfig.badgeClass}`}
+                          >
+                            <Shield size={10} />
+                            {roleConfig.label}
+                          </span>
+                        </div>
+                      </div>
 
-      {/* ADD EMPLOYEE MODAL */}
-      {isAddOpen && (
-        <div className="fixed inset-0 z-50 flex items-center justify-center p-4 bg-black/70 backdrop-blur-sm overflow-y-auto">
-          <div className="bg-white dark:bg-slate-900 rounded-3xl border border-slate-200 dark:border-slate-800 w-full max-w-lg overflow-hidden shadow-2xl">
-            <div className="px-6 py-4 border-b border-slate-200 dark:border-slate-800 flex items-center justify-between bg-slate-50/50 dark:bg-slate-800/30">
-              <div className="flex items-center gap-2">
-                <UserPlus size={18} className="text-green-600 dark:text-green-400" />
-                <h3 className="text-base font-extrabold text-slate-900 dark:text-white">
-                  Add Store Employee
-                </h3>
-              </div>
-              <button
-                onClick={() => setIsAddOpen(false)}
-                className="text-slate-400 hover:text-slate-600 dark:hover:text-slate-200 p-1.5 rounded-lg"
-              >
-                ✕
-              </button>
+                      {/* Active Status Badge */}
+                      {emp.isActive ? (
+                        <span className="inline-flex items-center gap-1 px-2 py-0.5 rounded-full text-[10px] font-bold bg-green-500/10 text-green-700 dark:text-green-400 border border-green-500/20 shrink-0">
+                          <span className="w-1.5 h-1.5 rounded-full bg-green-500 animate-pulse" />
+                          Active
+                        </span>
+                      ) : (
+                        <span className="inline-flex items-center gap-1 px-2 py-0.5 rounded-full text-[10px] font-bold bg-red-500/10 text-red-600 dark:text-red-400 border border-red-500/20 shrink-0">
+                          <span className="w-1.5 h-1.5 rounded-full bg-red-500" />
+                          Inactive
+                        </span>
+                      )}
+                    </div>
+
+                    {/* Card Details: Email, Phone, Outlet */}
+                    <div className="pt-2 border-t border-slate-100 dark:border-slate-800/80 text-[11px] text-slate-600 dark:text-slate-400 space-y-1">
+                      <div className="flex items-center gap-1.5 truncate">
+                        <Mail size={12} className="text-slate-400 shrink-0" />
+                        <span className="truncate">{emp.email}</span>
+                      </div>
+                      {emp.phone && (
+                        <div className="flex items-center gap-1.5 truncate">
+                          <Phone size={12} className="text-slate-400 shrink-0" />
+                          <span className="truncate">{emp.phone}</span>
+                        </div>
+                      )}
+                      <div className="flex items-center gap-1.5 truncate text-slate-800 dark:text-slate-200 font-medium">
+                        <Store size={12} className="text-green-600 dark:text-green-400 shrink-0" />
+                        <span className="truncate">{emp.primaryStore?.name || "Main Outlet"}</span>
+                      </div>
+                    </div>
+
+                    {/* Touch Action Bar (Owner/Manager) */}
+                    {isOwner && (
+                      <div className="pt-2.5 border-t border-slate-100 dark:border-slate-800 flex items-center justify-between gap-1.5">
+                        <button
+                          onClick={() => {
+                            setEditingEmployee(emp);
+                            setEditFormData({
+                              fullName: emp.fullName,
+                              phone: emp.phone || "",
+                              role: emp.role,
+                              storeId: emp.primaryStore?.id || stores[0]?.id || "",
+                              isActive: emp.isActive,
+                            });
+                            setIsEditOpen(true);
+                          }}
+                          className="flex-1 flex items-center justify-center gap-1.5 py-1.5 px-2 text-xs font-semibold rounded-xl bg-slate-100 dark:bg-slate-800 text-slate-700 dark:text-slate-200 hover:bg-slate-200 dark:hover:bg-slate-700 transition-colors cursor-pointer"
+                        >
+                          <Edit2 size={13} />
+                          <span>Edit</span>
+                        </button>
+
+                        <button
+                          onClick={() => handleResetPassword(emp)}
+                          title="Generate Password Link"
+                          className="p-1.5 text-xs font-semibold rounded-xl bg-indigo-50 dark:bg-indigo-950/40 text-indigo-600 dark:text-indigo-400 hover:bg-indigo-100 dark:hover:bg-indigo-900/50 transition-colors shrink-0 cursor-pointer"
+                        >
+                          <KeyRound size={15} />
+                        </button>
+
+                        {!isSelf && (
+                          <button
+                            onClick={() => handleToggleStatus(emp)}
+                            className={`flex items-center justify-center gap-1 py-1.5 px-2.5 text-xs font-semibold rounded-xl transition-colors cursor-pointer ${
+                              emp.isActive
+                                ? "bg-red-50 dark:bg-red-950/30 text-red-600 dark:text-red-400 hover:bg-red-100"
+                                : "bg-green-50 dark:bg-green-950/30 text-green-600 dark:text-green-400 hover:bg-green-100"
+                            }`}
+                          >
+                            {emp.isActive ? <UserX size={13} /> : <UserCheck size={13} />}
+                            <span>{emp.isActive ? "Deactivate" : "Activate"}</span>
+                          </button>
+                        )}
+                      </div>
+                    )}
+                  </div>
+                );
+              })}
             </div>
 
-            {formError && (
-              <div className="mx-6 mt-4 p-3 rounded-xl bg-red-500/10 border border-red-500/20 text-red-600 dark:text-red-400 text-xs font-semibold">
-                {formError}
-              </div>
-            )}
+            {/* DESKTOP VIEW: Full Data Table (hidden sm:block) */}
+            <div className="hidden sm:block bg-white dark:bg-slate-900 rounded-3xl border border-slate-200 dark:border-slate-800 shadow-sm overflow-hidden">
+              <div className="overflow-x-auto">
+                <table className="w-full text-left border-collapse">
+                  <thead>
+                    <tr className="border-b border-slate-100 dark:border-slate-800 bg-slate-50/50 dark:bg-slate-800/30 text-[11px] font-extrabold uppercase tracking-wider text-slate-500 dark:text-slate-400">
+                      <th className="py-3.5 px-6">Employee</th>
+                      <th className="py-3.5 px-6">Role & Permissions</th>
+                      <th className="py-3.5 px-6">Assigned Outlet</th>
+                      <th className="py-3.5 px-6">Status</th>
+                      <th className="py-3.5 px-6">Joined Date</th>
+                      <th className="py-3.5 px-6 text-right">Actions</th>
+                    </tr>
+                  </thead>
+                  <tbody className="divide-y divide-slate-100 dark:divide-slate-800 text-xs">
+                    {filteredEmployees.map((emp) => {
+                      const roleConfig = ROLE_DESCRIPTIONS[emp.role.toLowerCase()] || ROLE_DESCRIPTIONS.cashier;
+                      const isSelf = emp.userId === user?.id;
 
-            <form onSubmit={handleCreateEmployee} className="p-6 space-y-4">
-              <div>
-                <label className="block text-xs font-bold text-slate-700 dark:text-slate-300 mb-1">
-                  Full Name *
-                </label>
-                <input
-                  type="text"
-                  required
-                  placeholder="e.g. John Doe"
-                  value={newEmployee.fullName}
-                  onChange={(e) => setNewEmployee({ ...newEmployee, fullName: e.target.value })}
-                  className="w-full px-3.5 py-2.5 text-xs font-semibold bg-slate-50 dark:bg-slate-800 rounded-xl border border-slate-200 dark:border-slate-700 text-slate-900 dark:text-white focus:ring-2 focus:ring-green-500 focus:outline-none"
-                />
+                      return (
+                        <tr
+                          key={emp.id}
+                          className="hover:bg-slate-50/80 dark:hover:bg-slate-800/40 transition-colors"
+                        >
+                          <td className="py-4 px-6">
+                            <div className="flex items-center gap-3">
+                              <div className="w-9 h-9 rounded-full bg-green-500/10 text-green-700 dark:text-green-400 flex items-center justify-center font-bold text-xs shrink-0">
+                                {emp.fullName.charAt(0).toUpperCase()}
+                              </div>
+                              <div>
+                                <div className="font-bold text-slate-900 dark:text-white text-sm flex items-center gap-1.5">
+                                  <span>{emp.fullName}</span>
+                                  {isSelf && (
+                                    <span className="px-1.5 py-0.2 rounded text-[9px] font-bold bg-slate-200 dark:bg-slate-700 text-slate-700 dark:text-slate-300">
+                                      You
+                                    </span>
+                                  )}
+                                </div>
+                                <div className="text-slate-500 dark:text-slate-400 text-[11px] flex items-center gap-2">
+                                  <span>{emp.email}</span>
+                                  {emp.phone && <span>• {emp.phone}</span>}
+                                </div>
+                              </div>
+                            </div>
+                          </td>
+
+                          <td className="py-4 px-6">
+                            <span
+                              className={`inline-flex items-center gap-1.5 px-2.5 py-1 rounded-lg text-xs font-bold border ${roleConfig.badgeClass}`}
+                            >
+                              <Shield size={12} />
+                              {roleConfig.label}
+                            </span>
+                          </td>
+
+                          <td className="py-4 px-6">
+                            <div className="font-semibold text-slate-800 dark:text-slate-200 flex items-center gap-1.5">
+                              <Store size={13} className="text-green-600 dark:text-green-400" />
+                              <span>{emp.primaryStore?.name || "Main Outlet"}</span>
+                            </div>
+                          </td>
+
+                          <td className="py-4 px-6">
+                            {emp.isActive ? (
+                              <span className="inline-flex items-center gap-1.5 px-2.5 py-0.5 rounded-full text-[11px] font-bold bg-green-500/10 text-green-700 dark:text-green-400 border border-green-500/20">
+                                <span className="w-1.5 h-1.5 rounded-full bg-green-500 animate-pulse" />
+                                Active
+                              </span>
+                            ) : (
+                              <span className="inline-flex items-center gap-1.5 px-2.5 py-0.5 rounded-full text-[11px] font-bold bg-red-500/10 text-red-600 dark:text-red-400 border border-red-500/20">
+                                <span className="w-1.5 h-1.5 rounded-full bg-red-500" />
+                                Inactive
+                              </span>
+                            )}
+                          </td>
+
+                          <td className="py-4 px-6 text-slate-500 dark:text-slate-400 font-medium">
+                            <div className="flex items-center gap-1.5">
+                              <Calendar size={13} className="text-slate-400" />
+                              <span>{new Date(emp.createdAt).toLocaleDateString()}</span>
+                            </div>
+                          </td>
+
+                          <td className="py-4 px-6 text-right">
+                            {isOwner && (
+                              <div className="flex items-center justify-end gap-1.5">
+                                <button
+                                  onClick={() => {
+                                    setEditingEmployee(emp);
+                                    setEditFormData({
+                                      fullName: emp.fullName,
+                                      phone: emp.phone || "",
+                                      role: emp.role,
+                                      storeId: emp.primaryStore?.id || stores[0]?.id || "",
+                                      isActive: emp.isActive,
+                                    });
+                                    setIsEditOpen(true);
+                                  }}
+                                  title="Edit Employee"
+                                  className="p-1.5 rounded-lg text-slate-600 dark:text-slate-300 hover:bg-slate-100 dark:hover:bg-slate-800 transition-colors cursor-pointer"
+                                >
+                                  <Edit2 size={15} />
+                                </button>
+
+                                <button
+                                  onClick={() => handleResetPassword(emp)}
+                                  title="Generate Password Setup Link"
+                                  className="p-1.5 rounded-lg text-indigo-600 dark:text-indigo-400 hover:bg-indigo-50 dark:hover:bg-indigo-950/40 transition-colors cursor-pointer"
+                                >
+                                  <KeyRound size={15} />
+                                </button>
+
+                                {!isSelf && (
+                                  <button
+                                    onClick={() => handleToggleStatus(emp)}
+                                    title={emp.isActive ? "Deactivate" : "Activate"}
+                                    className={`p-1.5 rounded-lg transition-colors cursor-pointer ${
+                                      emp.isActive
+                                        ? "text-red-600 dark:text-red-400 hover:bg-red-50 dark:hover:bg-red-950/40"
+                                        : "text-green-600 dark:text-green-400 hover:bg-green-50 dark:hover:bg-green-950/40"
+                                    }`}
+                                  >
+                                    {emp.isActive ? <UserX size={15} /> : <UserCheck size={15} />}
+                                  </button>
+                                )}
+                              </div>
+                            )}
+                          </td>
+                        </tr>
+                      );
+                    })}
+                  </tbody>
+                </table>
+              </div>
+            </div>
+          </>
+        )}
+
+        {/* ADD EMPLOYEE MODAL */}
+        {isAddOpen && (
+          <div className="fixed inset-0 z-50 flex items-center justify-center p-3 sm:p-4 bg-black/70 backdrop-blur-sm overflow-y-auto">
+            <div className="bg-white dark:bg-slate-900 rounded-3xl border border-slate-200 dark:border-slate-800 w-full max-w-lg overflow-hidden shadow-2xl max-h-[90vh] flex flex-col">
+              <div className="px-5 py-4 border-b border-slate-200 dark:border-slate-800 flex items-center justify-between bg-slate-50/50 dark:bg-slate-800/30 shrink-0">
+                <div className="flex items-center gap-2">
+                  <UserPlus size={18} className="text-green-600 dark:text-green-400" />
+                  <h3 className="text-base font-extrabold text-slate-900 dark:text-white">
+                    Add Store Employee
+                  </h3>
+                </div>
+                <button
+                  onClick={() => setIsAddOpen(false)}
+                  className="text-slate-400 hover:text-slate-600 dark:hover:text-slate-200 p-1.5 rounded-lg cursor-pointer"
+                >
+                  ✕
+                </button>
               </div>
 
-              <div className="grid grid-cols-1 sm:grid-cols-2 gap-4">
+              {formError && (
+                <div className="mx-5 mt-4 p-3 rounded-xl bg-red-500/10 border border-red-500/20 text-red-600 dark:text-red-400 text-xs font-semibold shrink-0">
+                  {formError}
+                </div>
+              )}
+
+              <form onSubmit={handleCreateEmployee} className="p-5 space-y-4 overflow-y-auto">
+                <div>
+                  <label className="block text-xs font-bold text-slate-700 dark:text-slate-300 mb-1">
+                    Full Name *
+                  </label>
+                  <input
+                    type="text"
+                    required
+                    placeholder="e.g. John Doe"
+                    value={newEmployee.fullName}
+                    onChange={(e) => setNewEmployee({ ...newEmployee, fullName: e.target.value })}
+                    className="w-full px-3.5 py-2 text-xs font-semibold bg-slate-50 dark:bg-slate-800 text-slate-900 dark:text-white rounded-xl border border-slate-200 dark:border-slate-700 focus:outline-none focus:ring-2 focus:ring-green-500"
+                  />
+                </div>
+
                 <div>
                   <label className="block text-xs font-bold text-slate-700 dark:text-slate-300 mb-1">
                     Email Address *
@@ -616,210 +747,207 @@ export default function EmployeesPage() {
                   <input
                     type="email"
                     required
-                    placeholder="employee@shop.com"
+                    placeholder="john@store.com"
                     value={newEmployee.email}
                     onChange={(e) => setNewEmployee({ ...newEmployee, email: e.target.value })}
-                    className="w-full px-3.5 py-2.5 text-xs font-semibold bg-slate-50 dark:bg-slate-800 rounded-xl border border-slate-200 dark:border-slate-700 text-slate-900 dark:text-white focus:ring-2 focus:ring-green-500 focus:outline-none"
+                    className="w-full px-3.5 py-2 text-xs font-semibold bg-slate-50 dark:bg-slate-800 text-slate-900 dark:text-white rounded-xl border border-slate-200 dark:border-slate-700 focus:outline-none focus:ring-2 focus:ring-green-500"
                   />
                 </div>
 
                 <div>
                   <label className="block text-xs font-bold text-slate-700 dark:text-slate-300 mb-1">
-                    Phone (Optional)
+                    Phone Number
                   </label>
                   <input
                     type="tel"
-                    placeholder="+8801..."
+                    placeholder="+880 1700-000000"
                     value={newEmployee.phone}
                     onChange={(e) => setNewEmployee({ ...newEmployee, phone: e.target.value })}
-                    className="w-full px-3.5 py-2.5 text-xs font-semibold bg-slate-50 dark:bg-slate-800 rounded-xl border border-slate-200 dark:border-slate-700 text-slate-900 dark:text-white focus:ring-2 focus:ring-green-500 focus:outline-none"
+                    className="w-full px-3.5 py-2 text-xs font-semibold bg-slate-50 dark:bg-slate-800 text-slate-900 dark:text-white rounded-xl border border-slate-200 dark:border-slate-700 focus:outline-none focus:ring-2 focus:ring-green-500"
                   />
                 </div>
-              </div>
 
-              <div className="grid grid-cols-1 sm:grid-cols-2 gap-4">
                 <div>
                   <label className="block text-xs font-bold text-slate-700 dark:text-slate-300 mb-1">
-                    Assigned Role *
+                    Role & Permissions *
                   </label>
                   <select
-                    required
                     value={newEmployee.role}
                     onChange={(e) => setNewEmployee({ ...newEmployee, role: e.target.value })}
-                    className="w-full px-3.5 py-2.5 text-xs font-semibold bg-slate-50 dark:bg-slate-800 rounded-xl border border-slate-200 dark:border-slate-700 text-slate-900 dark:text-white focus:ring-2 focus:ring-green-500 focus:outline-none"
+                    className="w-full px-3.5 py-2 text-xs font-semibold bg-slate-50 dark:bg-slate-800 text-slate-900 dark:text-white rounded-xl border border-slate-200 dark:border-slate-700 focus:outline-none focus:ring-2 focus:ring-green-500"
                   >
-                    <option value="cashier">Sales Person / Cashier</option>
-                    <option value="manager">Store Manager</option>
-                    <option value="inventory">Inventory Staff</option>
-                    <option value="accountant">Accountant / Finance</option>
-                    {isOwner && <option value="owner">Shop Owner</option>}
+                    <option value="cashier">Sales Person / Cashier (POS, Sales, Invoices)</option>
+                    <option value="manager">Store Manager (POS, Inventory, Products, Reports)</option>
+                    <option value="inventory">Inventory Staff (Stock, Products, Movements)</option>
+                    <option value="accountant">Accountant (Financial Reports, Balances)</option>
+                    <option value="owner">Shop Owner (Full Admin Privileges)</option>
                   </select>
+                  <p className="text-[11px] text-slate-500 dark:text-slate-400 mt-1">
+                    {ROLE_DESCRIPTIONS[newEmployee.role]?.desc}
+                  </p>
                 </div>
 
-                <div>
-                  <label className="block text-xs font-bold text-slate-700 dark:text-slate-300 mb-1">
-                    Assigned Store Outlet *
-                  </label>
-                  <select
-                    required
-                    value={newEmployee.storeId}
-                    onChange={(e) => setNewEmployee({ ...newEmployee, storeId: e.target.value })}
-                    className="w-full px-3.5 py-2.5 text-xs font-semibold bg-slate-50 dark:bg-slate-800 rounded-xl border border-slate-200 dark:border-slate-700 text-slate-900 dark:text-white focus:ring-2 focus:ring-green-500 focus:outline-none"
+                {stores.length > 0 && (
+                  <div>
+                    <label className="block text-xs font-bold text-slate-700 dark:text-slate-300 mb-1">
+                      Assigned Store Outlet *
+                    </label>
+                    <select
+                      value={newEmployee.storeId}
+                      onChange={(e) => setNewEmployee({ ...newEmployee, storeId: e.target.value })}
+                      className="w-full px-3.5 py-2 text-xs font-semibold bg-slate-50 dark:bg-slate-800 text-slate-900 dark:text-white rounded-xl border border-slate-200 dark:border-slate-700 focus:outline-none focus:ring-2 focus:ring-green-500"
+                    >
+                      {stores.map((s) => (
+                        <option key={s.id} value={s.id}>
+                          {s.name} {s.code ? `(${s.code})` : ""}
+                        </option>
+                      ))}
+                    </select>
+                  </div>
+                )}
+
+                <div className="pt-2 flex items-center justify-end gap-2.5">
+                  <button
+                    type="button"
+                    onClick={() => setIsAddOpen(false)}
+                    className="px-4 py-2 text-xs font-bold text-slate-600 dark:text-slate-300 hover:bg-slate-100 dark:hover:bg-slate-800 rounded-xl transition-colors cursor-pointer"
                   >
-                    {stores.map((s) => (
-                      <option key={s.id} value={s.id}>
-                        {s.name} {s.code ? `(${s.code})` : ""}
-                      </option>
-                    ))}
-                  </select>
+                    Cancel
+                  </button>
+                  <button
+                    type="submit"
+                    disabled={isSubmitting}
+                    className="px-5 py-2 text-xs font-bold bg-green-600 hover:bg-green-500 text-white rounded-xl shadow-lg shadow-green-600/20 transition-all cursor-pointer"
+                  >
+                    {isSubmitting ? "Creating..." : "Create Employee"}
+                  </button>
                 </div>
-              </div>
-
-              {/* Selected Role Capability Summary */}
-              <div className="p-3.5 rounded-2xl bg-slate-50 dark:bg-slate-800/60 border border-slate-200 dark:border-slate-700">
-                <span className="text-[11px] font-bold text-slate-800 dark:text-slate-200 block mb-1">
-                  Permissions: {ROLE_DESCRIPTIONS[newEmployee.role]?.label}
-                </span>
-                <p className="text-[10px] text-slate-500 dark:text-slate-400">
-                  {ROLE_DESCRIPTIONS[newEmployee.role]?.desc}
-                </p>
-              </div>
-
-              <div className="flex items-center justify-end gap-3 pt-4 border-t border-slate-200 dark:border-slate-800">
-                <button
-                  type="button"
-                  onClick={() => setIsAddOpen(false)}
-                  className="px-4 py-2 text-xs font-bold text-slate-600 dark:text-slate-300 hover:bg-slate-100 dark:hover:bg-slate-800 rounded-xl transition-colors"
-                >
-                  Cancel
-                </button>
-                <button
-                  type="submit"
-                  disabled={isSubmitting}
-                  className="flex items-center gap-2 px-5 py-2.5 rounded-xl bg-green-600 hover:bg-green-500 text-white text-xs font-bold transition-all disabled:opacity-50"
-                >
-                  {isSubmitting ? "Onboarding Staff..." : "Onboard Employee"}
-                </button>
-              </div>
-            </form>
-          </div>
-        </div>
-      )}
-
-      {/* EDIT EMPLOYEE MODAL */}
-      {isEditOpen && editingEmployee && (
-        <div className="fixed inset-0 z-50 flex items-center justify-center p-4 bg-black/70 backdrop-blur-sm overflow-y-auto">
-          <div className="bg-white dark:bg-slate-900 rounded-3xl border border-slate-200 dark:border-slate-800 w-full max-w-lg overflow-hidden shadow-2xl">
-            <div className="px-6 py-4 border-b border-slate-200 dark:border-slate-800 flex items-center justify-between bg-slate-50/50 dark:bg-slate-800/30">
-              <div>
-                <h3 className="text-base font-extrabold text-slate-900 dark:text-white">
-                  Edit Employee: {editingEmployee.fullName}
-                </h3>
-                <p className="text-xs text-slate-500 dark:text-slate-400">{editingEmployee.email}</p>
-              </div>
-              <button
-                onClick={() => setIsEditOpen(false)}
-                className="text-slate-400 hover:text-slate-600 dark:hover:text-slate-200 p-1.5 rounded-lg"
-              >
-                ✕
-              </button>
+              </form>
             </div>
+          </div>
+        )}
 
-            <form onSubmit={handleEditSubmit} className="p-6 space-y-4">
-              <div>
-                <label className="block text-xs font-bold text-slate-700 dark:text-slate-300 mb-1">
-                  Full Name
-                </label>
-                <input
-                  type="text"
-                  required
-                  value={editFormData.fullName}
-                  onChange={(e) => setEditFormData({ ...editFormData, fullName: e.target.value })}
-                  className="w-full px-3.5 py-2.5 text-xs font-semibold bg-slate-50 dark:bg-slate-800 rounded-xl border border-slate-200 dark:border-slate-700 text-slate-900 dark:text-white focus:ring-2 focus:ring-green-500 focus:outline-none"
-                />
+        {/* EDIT EMPLOYEE MODAL */}
+        {isEditOpen && editingEmployee && (
+          <div className="fixed inset-0 z-50 flex items-center justify-center p-3 sm:p-4 bg-black/70 backdrop-blur-sm overflow-y-auto">
+            <div className="bg-white dark:bg-slate-900 rounded-3xl border border-slate-200 dark:border-slate-800 w-full max-w-lg overflow-hidden shadow-2xl max-h-[90vh] flex flex-col">
+              <div className="px-5 py-4 border-b border-slate-200 dark:border-slate-800 flex items-center justify-between bg-slate-50/50 dark:bg-slate-800/30 shrink-0">
+                <div className="flex items-center gap-2">
+                  <Edit2 size={18} className="text-indigo-600 dark:text-indigo-400" />
+                  <h3 className="text-base font-extrabold text-slate-900 dark:text-white">
+                    Edit Employee: {editingEmployee.fullName}
+                  </h3>
+                </div>
+                <button
+                  onClick={() => setIsEditOpen(false)}
+                  className="text-slate-400 hover:text-slate-600 dark:hover:text-slate-200 p-1.5 rounded-lg cursor-pointer"
+                >
+                  ✕
+                </button>
               </div>
 
-              <div className="grid grid-cols-1 sm:grid-cols-2 gap-4">
+              {formError && (
+                <div className="mx-5 mt-4 p-3 rounded-xl bg-red-500/10 border border-red-500/20 text-red-600 dark:text-red-400 text-xs font-semibold shrink-0">
+                  {formError}
+                </div>
+              )}
+
+              <form onSubmit={handleEditSubmit} className="p-5 space-y-4 overflow-y-auto">
                 <div>
                   <label className="block text-xs font-bold text-slate-700 dark:text-slate-300 mb-1">
-                    Role
+                    Full Name *
+                  </label>
+                  <input
+                    type="text"
+                    required
+                    value={editFormData.fullName}
+                    onChange={(e) => setEditFormData({ ...editFormData, fullName: e.target.value })}
+                    className="w-full px-3.5 py-2 text-xs font-semibold bg-slate-50 dark:bg-slate-800 text-slate-900 dark:text-white rounded-xl border border-slate-200 dark:border-slate-700 focus:outline-none focus:ring-2 focus:ring-green-500"
+                  />
+                </div>
+
+                <div>
+                  <label className="block text-xs font-bold text-slate-700 dark:text-slate-300 mb-1">
+                    Phone Number
+                  </label>
+                  <input
+                    type="tel"
+                    value={editFormData.phone}
+                    onChange={(e) => setEditFormData({ ...editFormData, phone: e.target.value })}
+                    className="w-full px-3.5 py-2 text-xs font-semibold bg-slate-50 dark:bg-slate-800 text-slate-900 dark:text-white rounded-xl border border-slate-200 dark:border-slate-700 focus:outline-none focus:ring-2 focus:ring-green-500"
+                  />
+                </div>
+
+                <div>
+                  <label className="block text-xs font-bold text-slate-700 dark:text-slate-300 mb-1">
+                    Role & Permissions *
                   </label>
                   <select
                     value={editFormData.role}
                     onChange={(e) => setEditFormData({ ...editFormData, role: e.target.value })}
-                    className="w-full px-3.5 py-2.5 text-xs font-semibold bg-slate-50 dark:bg-slate-800 rounded-xl border border-slate-200 dark:border-slate-700 text-slate-900 dark:text-white focus:ring-2 focus:ring-green-500 focus:outline-none"
+                    className="w-full px-3.5 py-2 text-xs font-semibold bg-slate-50 dark:bg-slate-800 text-slate-900 dark:text-white rounded-xl border border-slate-200 dark:border-slate-700 focus:outline-none focus:ring-2 focus:ring-green-500"
                   >
-                    <option value="cashier">Sales Person / Cashier</option>
-                    <option value="manager">Store Manager</option>
-                    <option value="inventory">Inventory Staff</option>
-                    <option value="accountant">Accountant / Finance</option>
-                    {isOwner && <option value="owner">Shop Owner</option>}
+                    <option value="cashier">Sales Person / Cashier (POS, Sales, Invoices)</option>
+                    <option value="manager">Store Manager (POS, Inventory, Products, Reports)</option>
+                    <option value="inventory">Inventory Staff (Stock, Products, Movements)</option>
+                    <option value="accountant">Accountant (Financial Reports, Balances)</option>
+                    <option value="owner">Shop Owner (Full Admin Privileges)</option>
                   </select>
                 </div>
 
-                <div>
-                  <label className="block text-xs font-bold text-slate-700 dark:text-slate-300 mb-1">
-                    Store Outlet
+                {stores.length > 0 && (
+                  <div>
+                    <label className="block text-xs font-bold text-slate-700 dark:text-slate-300 mb-1">
+                      Assigned Store Outlet *
+                    </label>
+                    <select
+                      value={editFormData.storeId}
+                      onChange={(e) => setEditFormData({ ...editFormData, storeId: e.target.value })}
+                      className="w-full px-3.5 py-2 text-xs font-semibold bg-slate-50 dark:bg-slate-800 text-slate-900 dark:text-white rounded-xl border border-slate-200 dark:border-slate-700 focus:outline-none focus:ring-2 focus:ring-green-500"
+                    >
+                      {stores.map((s) => (
+                        <option key={s.id} value={s.id}>
+                          {s.name} {s.code ? `(${s.code})` : ""}
+                        </option>
+                      ))}
+                    </select>
+                  </div>
+                )}
+
+                <div className="flex items-center gap-2 pt-1">
+                  <input
+                    type="checkbox"
+                    id="editIsActive"
+                    checked={editFormData.isActive}
+                    onChange={(e) => setEditFormData({ ...editFormData, isActive: e.target.checked })}
+                    className="w-4 h-4 text-green-600 rounded focus:ring-green-500"
+                  />
+                  <label htmlFor="editIsActive" className="text-xs font-bold text-slate-700 dark:text-slate-300 cursor-pointer">
+                    Employee Account Active
                   </label>
-                  <select
-                    value={editFormData.storeId}
-                    onChange={(e) => setEditFormData({ ...editFormData, storeId: e.target.value })}
-                    className="w-full px-3.5 py-2.5 text-xs font-semibold bg-slate-50 dark:bg-slate-800 rounded-xl border border-slate-200 dark:border-slate-700 text-slate-900 dark:text-white focus:ring-2 focus:ring-green-500 focus:outline-none"
-                  >
-                    {stores.map((s) => (
-                      <option key={s.id} value={s.id}>
-                        {s.name} {s.code ? `(${s.code})` : ""}
-                      </option>
-                    ))}
-                  </select>
                 </div>
-              </div>
 
-              <div>
-                <label className="block text-xs font-bold text-slate-700 dark:text-slate-300 mb-1">
-                  Phone
-                </label>
-                <input
-                  type="tel"
-                  value={editFormData.phone}
-                  onChange={(e) => setEditFormData({ ...editFormData, phone: e.target.value })}
-                  className="w-full px-3.5 py-2.5 text-xs font-semibold bg-slate-50 dark:bg-slate-800 rounded-xl border border-slate-200 dark:border-slate-700 text-slate-900 dark:text-white focus:ring-2 focus:ring-green-500 focus:outline-none"
-                />
-              </div>
-
-              <div className="flex items-center gap-2 pt-2">
-                <input
-                  type="checkbox"
-                  id="isActiveToggle"
-                  checked={editFormData.isActive}
-                  onChange={(e) => setEditFormData({ ...editFormData, isActive: e.target.checked })}
-                  className="w-4 h-4 rounded text-green-600 focus:ring-green-500"
-                />
-                <label htmlFor="isActiveToggle" className="text-xs font-bold text-slate-700 dark:text-slate-300">
-                  Account Active (Uncheck to suspend access)
-                </label>
-              </div>
-
-              <div className="flex items-center justify-end gap-3 pt-4 border-t border-slate-200 dark:border-slate-800">
-                <button
-                  type="button"
-                  onClick={() => setIsEditOpen(false)}
-                  className="px-4 py-2 text-xs font-bold text-slate-600 dark:text-slate-300 hover:bg-slate-100 dark:hover:bg-slate-800 rounded-xl transition-colors"
-                >
-                  Cancel
-                </button>
-                <button
-                  type="submit"
-                  disabled={isSubmitting}
-                  className="flex items-center gap-2 px-5 py-2.5 rounded-xl bg-green-600 hover:bg-green-500 text-white text-xs font-bold transition-all disabled:opacity-50"
-                >
-                  {isSubmitting ? "Saving..." : "Save Changes"}
-                </button>
-              </div>
-            </form>
+                <div className="pt-2 flex items-center justify-end gap-2.5">
+                  <button
+                    type="button"
+                    onClick={() => setIsEditOpen(false)}
+                    className="px-4 py-2 text-xs font-bold text-slate-600 dark:text-slate-300 hover:bg-slate-100 dark:hover:bg-slate-800 rounded-xl transition-colors cursor-pointer"
+                  >
+                    Cancel
+                  </button>
+                  <button
+                    type="submit"
+                    disabled={isSubmitting}
+                    className="px-5 py-2 text-xs font-bold bg-indigo-600 hover:bg-indigo-500 text-white rounded-xl shadow-lg shadow-indigo-600/20 transition-all cursor-pointer"
+                  >
+                    {isSubmitting ? "Saving..." : "Save Changes"}
+                  </button>
+                </div>
+              </form>
+            </div>
           </div>
-        </div>
-      )}
+        )}
+      </main>
     </div>
   );
 }
