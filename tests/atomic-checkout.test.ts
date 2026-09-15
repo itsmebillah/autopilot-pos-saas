@@ -4,7 +4,7 @@ import {
   MockDatabaseState,
   AtomicSalePayload,
 } from '../lib/atomic-sale-simulator';
-import { Store, MasterProduct, StoreProduct, ProductSerial, ProductBatch, Customer } from '../types/database';
+import { Store, MasterProduct, Customer } from '../types/database';
 
 describe('Atomic POS Checkout Engine (create_sale_atomic)', () => {
   let db: MockDatabaseState;

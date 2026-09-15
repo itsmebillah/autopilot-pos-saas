@@ -70,7 +70,7 @@ if (existingProduct) {
       data,
     });
 
-  } catch (error) {
+  } catch {
 
     return NextResponse.json({
       success: false,

@@ -83,8 +83,7 @@ export default function OrdersPage() {
                       {sale.invoice_no}
                     </h2>
                     <p className="text-xs text-gray-400 mt-1">
-                      Date: {new Date(sale.created_at || Date.now()).toLocaleDateString()} at{" "}
-                      {new Date(sale.created_at || Date.now()).toLocaleTimeString()}
+                      Date: {sale.created_at ? new Date(sale.created_at).toLocaleDateString() : "Recent"} {sale.created_at ? `at ${new Date(sale.created_at).toLocaleTimeString()}` : ""}
                     </p>
                   </div>
                 </div>

@@ -7,7 +7,6 @@ import {
   LayoutDashboard,
   ShoppingCart,
   Package,
-  Users,
   Receipt,
   BarChart3,
   Settings,
