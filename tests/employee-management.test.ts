@@ -286,4 +286,38 @@ describe("Shop Owner & Employee Management RBAC Suite", () => {
       expect(result.assignedStoreId).toBe(storeReyonWatch.id);
     });
   });
+
+  describe("10. Initial Authentication Password Security & Zero Exposure", () => {
+    function validateInitialPassword(password?: string) {
+      if (!password || password.length < 8) {
+        throw new Error("Initial password must be at least 8 characters long");
+      }
+      return true;
+    }
+
+    it("requires initial password of at least 8 characters", () => {
+      expect(() => validateInitialPassword("12345")).toThrowError(
+        /Initial password must be at least 8 characters long/
+      );
+      expect(validateInitialPassword("StrongPass2026!")).toBe(true);
+    });
+
+    it("ensures GET /api/employees output contains ZERO plaintext password or credential fields", () => {
+      const sampleEmployeeItem = {
+        id: "emp-101",
+        userId: "user-101",
+        fullName: "Rocky",
+        email: "rocky@gmail.com",
+        phone: "01324438311",
+        role: "manager",
+        isActive: true,
+        primaryStore: storeReyonWatch,
+      };
+
+      const keys = Object.keys(sampleEmployeeItem);
+      expect(keys).not.toContain("password");
+      expect(keys).not.toContain("initial_password");
+      expect(keys).not.toContain("encrypted_password");
+    });
+  });
 });

@@ -19,6 +19,8 @@ import {
   Mail,
   Phone,
   Calendar,
+  Eye,
+  EyeOff,
 } from "lucide-react";
 import { useAuth } from "@/lib/auth-context";
 
@@ -79,19 +81,24 @@ export default function EmployeesPage() {
   const [roleFilter, setRoleFilter] = useState("all");
   const [statusFilter, setStatusFilter] = useState("all");
 
-  // Add Employee Modal
+  // Add Employee Modal State
   const [isAddOpen, setIsAddOpen] = useState(false);
   const [isSubmitting, setIsSubmitting] = useState(false);
   const [formError, setFormError] = useState<string | null>(null);
+  const [showPassword, setShowPassword] = useState(false);
+  const [showConfirmPassword, setShowConfirmPassword] = useState(false);
+
   const [newEmployee, setNewEmployee] = useState({
     fullName: "",
     email: "",
     role: "cashier",
     storeId: "",
     phone: "",
+    password: "",
+    confirmPassword: "",
   });
 
-  // Edit Employee Modal
+  // Edit Employee Modal State
   const [isEditOpen, setIsEditOpen] = useState(false);
   const [editingEmployee, setEditingEmployee] = useState<EmployeeItem | null>(null);
   const [editFormData, setEditFormData] = useState({
@@ -125,7 +132,12 @@ export default function EmployeesPage() {
           setEmployees(data.employees || []);
           const fetchedStores = data.stores || [];
           setStores(fetchedStores);
+        } else {
+          setFormError(data.message || "Failed to load employees");
         }
+      } else {
+        const errorData = await res.json().catch(() => ({}));
+        setFormError(errorData.message || `Server returned error status ${res.status}`);
       }
     } catch (err) {
       console.error("Failed to load employees:", err);
@@ -142,10 +154,30 @@ export default function EmployeesPage() {
   const handleCreateEmployee = async (e: React.FormEvent) => {
     e.preventDefault();
     setFormError(null);
+
+    if (!newEmployee.password) {
+      setFormError("Initial password is required for employee account creation.");
+      return;
+    }
+
+    if (newEmployee.password.length < 8) {
+      setFormError("Initial password must be at least 8 characters long.");
+      return;
+    }
+
+    if (newEmployee.password !== newEmployee.confirmPassword) {
+      setFormError("Initial password and confirm password do not match.");
+      return;
+    }
+
     setIsSubmitting(true);
 
     const payload = {
-      ...newEmployee,
+      fullName: newEmployee.fullName,
+      email: newEmployee.email,
+      role: newEmployee.role,
+      phone: newEmployee.phone,
+      password: newEmployee.password,
       storeId: newEmployee.storeId || availableStores[0]?.id || user?.activeStore?.id || "",
     };
 
@@ -168,7 +200,11 @@ export default function EmployeesPage() {
         role: "cashier",
         storeId: availableStores[0]?.id || "",
         phone: "",
+        password: "",
+        confirmPassword: "",
       });
+      setShowPassword(false);
+      setShowConfirmPassword(false);
       await fetchEmployees();
     } catch (err: unknown) {
       const error = err as Error;
@@ -315,7 +351,11 @@ export default function EmployeesPage() {
                     role: "cashier",
                     storeId: initialStoreId,
                     phone: "",
+                    password: "",
+                    confirmPassword: "",
                   });
+                  setShowPassword(false);
+                  setShowConfirmPassword(false);
                   setIsAddOpen(true);
                 }}
                 className="flex items-center gap-1.5 px-3.5 sm:px-4 py-2 sm:py-2.5 rounded-xl bg-gradient-to-r from-green-600 to-emerald-600 hover:from-green-500 hover:to-emerald-500 text-white text-xs sm:text-sm font-bold shadow-md shadow-green-600/20 transition-all active:scale-95 cursor-pointer"
@@ -792,6 +832,59 @@ export default function EmployeesPage() {
                     onChange={(e) => setNewEmployee({ ...newEmployee, phone: e.target.value })}
                     className="w-full px-3.5 py-2.5 text-xs font-semibold bg-slate-50 dark:bg-slate-800 text-slate-900 dark:text-white rounded-xl border border-slate-200 dark:border-slate-700 focus:outline-none focus:ring-2 focus:ring-green-500"
                   />
+                </div>
+
+                {/* Initial Authentication Password Fields */}
+                <div className="grid sm:grid-cols-2 gap-3">
+                  <div>
+                    <label className="block text-xs font-bold text-slate-700 dark:text-slate-300 mb-1">
+                      Initial Password *
+                    </label>
+                    <div className="relative">
+                      <input
+                        type={showPassword ? "text" : "password"}
+                        required
+                        minLength={8}
+                        placeholder="Min 8 characters"
+                        value={newEmployee.password}
+                        onChange={(e) => setNewEmployee({ ...newEmployee, password: e.target.value })}
+                        className="w-full pl-3.5 pr-9 py-2.5 text-xs font-semibold bg-slate-50 dark:bg-slate-800 text-slate-900 dark:text-white rounded-xl border border-slate-200 dark:border-slate-700 focus:outline-none focus:ring-2 focus:ring-green-500"
+                      />
+                      <button
+                        type="button"
+                        onClick={() => setShowPassword(!showPassword)}
+                        className="absolute right-2.5 top-1/2 -translate-y-1/2 text-slate-400 hover:text-slate-600 dark:hover:text-slate-200 p-1 cursor-pointer"
+                        aria-label={showPassword ? "Hide password" : "Show password"}
+                      >
+                        {showPassword ? <EyeOff size={14} /> : <Eye size={14} />}
+                      </button>
+                    </div>
+                  </div>
+
+                  <div>
+                    <label className="block text-xs font-bold text-slate-700 dark:text-slate-300 mb-1">
+                      Confirm Password *
+                    </label>
+                    <div className="relative">
+                      <input
+                        type={showConfirmPassword ? "text" : "password"}
+                        required
+                        minLength={8}
+                        placeholder="Re-enter password"
+                        value={newEmployee.confirmPassword}
+                        onChange={(e) => setNewEmployee({ ...newEmployee, confirmPassword: e.target.value })}
+                        className="w-full pl-3.5 pr-9 py-2.5 text-xs font-semibold bg-slate-50 dark:bg-slate-800 text-slate-900 dark:text-white rounded-xl border border-slate-200 dark:border-slate-700 focus:outline-none focus:ring-2 focus:ring-green-500"
+                      />
+                      <button
+                        type="button"
+                        onClick={() => setShowConfirmPassword(!showConfirmPassword)}
+                        className="absolute right-2.5 top-1/2 -translate-y-1/2 text-slate-400 hover:text-slate-600 dark:hover:text-slate-200 p-1 cursor-pointer"
+                        aria-label={showConfirmPassword ? "Hide password" : "Show password"}
+                      >
+                        {showConfirmPassword ? <EyeOff size={14} /> : <Eye size={14} />}
+                      </button>
+                    </div>
+                  </div>
                 </div>
 
                 <div>

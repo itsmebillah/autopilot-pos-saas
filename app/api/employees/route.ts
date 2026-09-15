@@ -10,29 +10,30 @@ export async function GET(_req: Request) {
     const adminClient = getServerSupabaseAdmin();
     const orgId = session.organization.id;
 
-    // Fetch all members in this organization
-    const { data: members, error } = await adminClient
+    // Fetch all organization members for this organization
+    const { data: members, error: memberErr } = await adminClient
       .from("organization_members")
-      .select(`
-        id,
-        user_id,
-        role,
-        is_active,
-        created_at,
-        updated_at,
-        user_profiles:user_id (
-          id,
-          full_name,
-          phone,
-          avatar_url
-        )
-      `)
+      .select("id, user_id, role, is_active, created_at, updated_at")
       .eq("organization_id", orgId)
       .order("created_at", { ascending: false });
 
-    if (error) {
-      throw error;
+    if (memberErr) {
+      throw memberErr;
     }
+
+    const userIds = (members || []).map((m: any) => m.user_id);
+
+    // Fetch user profiles separately to avoid PostgREST relationship schema cache failures (PGRST200)
+    const { data: profiles, error: profileErr } = userIds.length > 0
+      ? await adminClient.from("user_profiles").select("id, full_name, phone, avatar_url").in("id", userIds)
+      : { data: [], error: null };
+
+    if (profileErr) {
+      throw profileErr;
+    }
+
+    const profileMap = new Map<string, any>();
+    (profiles || []).forEach((p: any) => profileMap.set(p.id, p));
 
     // Fetch store assignments for these users within this organization's stores
     const { data: orgStores } = await adminClient
@@ -42,10 +43,12 @@ export async function GET(_req: Request) {
 
     const orgStoreIds = (orgStores || []).map((s: any) => s.id);
 
-    const { data: storeAssignments } = await adminClient
-      .from("store_members")
-      .select("user_id, store_id, stores(id, name, code)")
-      .in("store_id", orgStoreIds);
+    const { data: storeAssignments } = orgStoreIds.length > 0
+      ? await adminClient
+          .from("store_members")
+          .select("user_id, store_id, stores(id, name, code)")
+          .in("store_id", orgStoreIds)
+      : { data: [] };
 
     // Fetch auth emails from Supabase Auth admin
     const { data: authUsers } = await adminClient.auth.admin.listUsers();
@@ -55,7 +58,7 @@ export async function GET(_req: Request) {
     });
 
     const formattedEmployees = (members || []).map((m: any) => {
-      const profile = m.user_profiles;
+      const profile = profileMap.get(m.user_id);
       const userStores = (storeAssignments || [])
         .filter((sa: any) => sa.user_id === m.user_id)
         .map((sa: any) => ({
@@ -99,7 +102,7 @@ export async function POST(req: Request) {
     requireRole(session, ["owner", "manager"]);
 
     const body = await req.json().catch(() => ({}));
-    const { fullName, email, role, storeId: clientStoreId, phone } = body;
+    const { fullName, email, role, storeId: clientStoreId, phone, password } = body;
 
     // Resolve target store ID: use client-supplied storeId or fall back to authenticated session store
     const storeId = clientStoreId || session.store?.id || session.accessibleStores?.[0]?.id;
@@ -107,6 +110,13 @@ export async function POST(req: Request) {
     if (!fullName || !email || !role || !storeId) {
       return NextResponse.json(
         { success: false, message: "Full Name, Email, Role, and Store are required" },
+        { status: 400 }
+      );
+    }
+
+    if (password && typeof password === "string" && password.length < 8) {
+      return NextResponse.json(
+        { success: false, message: "Initial password must be at least 8 characters long" },
         { status: 400 }
       );
     }
@@ -167,9 +177,17 @@ export async function POST(req: Request) {
 
     if (existing) {
       employeeUserId = existing.id;
+      // Update password if provided for existing auth user
+      if (password) {
+        await adminClient.auth.admin.updateUserById(existing.id, {
+          password: password,
+          email_confirm: true,
+        });
+      }
     } else {
       const { data: newUser, error: createAuthErr } = await adminClient.auth.admin.createUser({
         email: email.toLowerCase(),
+        password: password || undefined,
         email_confirm: true,
         user_metadata: { full_name: fullName, phone: phone || null },
       });
