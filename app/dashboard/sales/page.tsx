@@ -19,9 +19,13 @@ import CheckoutModal from "@/components/CheckoutModal";
 import InvoiceModal from "@/components/InvoiceModal";
 import { InvoiceData } from "@/lib/invoice-engine";
 
+import { useAuth } from "@/lib/auth-context";
+
 export default function SalesPage() {
+  const { user } = useAuth();
   const [products, setProducts] = useState<any[]>([]);
   const [cart, setCart] = useState<any[]>([]);
+  const [isCartInitialized, setIsCartInitialized] = useState(false);
   const [search, setSearch] = useState("");
   const [selectedCategory, setSelectedCategory] = useState<string>("ALL");
   const [mobileCartOpen, setMobileCartOpen] = useState(false);
@@ -31,6 +35,59 @@ export default function SalesPage() {
   const [isInvoiceModalOpen, setIsInvoiceModalOpen] = useState(false);
   const [lastScannedFeedback, setLastScannedFeedback] = useState<string | null>(null);
   const [currencySymbol, setCurrencySymbol] = useState("৳");
+
+  // Restore tenant-isolated cart or initialize clean empty cart
+  useEffect(() => {
+    if (typeof window === "undefined") return;
+    const userId = user?.id || "guest";
+    const storeId = user?.activeStore?.id || "default";
+    const storageKey = `pos_cart_${userId}_${storeId}`;
+
+    try {
+      // Clear legacy/un-scoped keys
+      localStorage.removeItem("pos_cart");
+      localStorage.removeItem("cart");
+      localStorage.removeItem("demo_cart");
+    } catch {}
+
+    try {
+      const saved = localStorage.getItem(storageKey);
+      if (saved) {
+        const parsed = JSON.parse(saved);
+        if (Array.isArray(parsed) && parsed.length > 0) {
+          const validItems = parsed.filter(
+            (item: any) => item && item.id && Number(item.quantity) > 0 && Number(item.sell_price || 0) >= 0
+          );
+          setCart(validItems);
+          setIsCartInitialized(true);
+          return;
+        }
+      }
+    } catch {
+      try {
+        localStorage.removeItem(storageKey);
+      } catch {}
+    }
+
+    setCart([]);
+    setIsCartInitialized(true);
+  }, [user?.id, user?.activeStore?.id]);
+
+  // Sync cart changes to tenant-isolated storage
+  useEffect(() => {
+    if (!isCartInitialized || typeof window === "undefined") return;
+    const userId = user?.id || "guest";
+    const storeId = user?.activeStore?.id || "default";
+    const storageKey = `pos_cart_${userId}_${storeId}`;
+
+    try {
+      if (cart.length > 0) {
+        localStorage.setItem(storageKey, JSON.stringify(cart));
+      } else {
+        localStorage.removeItem(storageKey);
+      }
+    } catch {}
+  }, [cart, isCartInitialized, user?.id, user?.activeStore?.id]);
 
   async function loadProducts() {
     try {
@@ -184,11 +241,12 @@ export default function SalesPage() {
           <button
             type="button"
             onClick={() => setMobileCartOpen(!mobileCartOpen)}
-            className="lg:hidden flex items-center gap-2 bg-green-600 dark:bg-green-500 text-white dark:text-black px-3.5 py-2 rounded-xl text-sm font-semibold shadow-md active:scale-95 transition-transform"
+            className="lg:hidden flex items-center gap-2 bg-green-600 dark:bg-green-500 text-white dark:text-black px-3.5 py-2.5 min-h-[44px] rounded-xl text-xs sm:text-sm font-semibold shadow-md active:scale-95 transition-transform shrink-0"
+            aria-label="View Cart"
           >
             <ShoppingCart size={18} />
-            <span>{totalItemsCount}</span>
-            <span className="font-bold">{currencySymbol}{total.toLocaleString()}</span>
+            <span>{totalItemsCount} {totalItemsCount === 1 ? "item" : "items"}</span>
+            <span className="font-bold font-mono">{currencySymbol}{total.toLocaleString()}</span>
           </button>
         </div>
 

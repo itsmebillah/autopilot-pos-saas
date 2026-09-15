@@ -12,15 +12,17 @@ interface BarcodeScannerOptions {
 /**
  * Custom React hook for capturing USB/Bluetooth Hardware Barcode Scanners.
  * Hardware scanners simulate rapid keyboard strokes (<50ms between key events) ending in 'Enter'.
+ * Human typing in form inputs will NOT trigger barcode scanning.
  */
 export function useBarcodeScanner({
   onScan,
   minChars = 3,
-  maxIntervalMs = 60,
+  maxIntervalMs = 50,
   enabled = true,
 }: BarcodeScannerOptions) {
   const bufferRef = useRef<string>("");
   const lastKeyTimeRef = useRef<number>(0);
+  const fastKeyCountRef = useRef<number>(0);
   const onScanRef = useRef(onScan);
 
   useEffect(() => {
@@ -35,8 +37,9 @@ export function useBarcodeScanner({
       if (e.ctrlKey || e.altKey || e.metaKey) return;
 
       const target = e.target as HTMLElement | null;
-      const isInputFocused =
-        Boolean(target && (target.tagName === "INPUT" || target.tagName === "TEXTAREA" || target.isContentEditable));
+      const isInputFocused = Boolean(
+        target && (target.tagName === "INPUT" || target.tagName === "TEXTAREA" || target.isContentEditable)
+      );
 
       const currentTime = Date.now();
       const interval = currentTime - lastKeyTimeRef.current;
@@ -44,11 +47,17 @@ export function useBarcodeScanner({
 
       if (e.key === "Enter") {
         const barcode = bufferRef.current.trim();
+        const wasBurst = fastKeyCountRef.current >= Math.max(1, minChars - 1);
         bufferRef.current = "";
+        fastKeyCountRef.current = 0;
+
+        // If in an active input field and typing was NOT a hardware scanner burst, ignore!
+        if (isInputFocused && !wasBurst) {
+          return;
+        }
 
         if (barcode.length >= minChars) {
-          // If in an active input, prevent standard form submit if it was a hardware scanner burst
-          if (isInputFocused && interval <= maxIntervalMs * 2) {
+          if (isInputFocused) {
             e.preventDefault();
             e.stopPropagation();
           }
@@ -57,21 +66,26 @@ export function useBarcodeScanner({
         return;
       }
 
-      // If key is a printable character (length 1)
+      // Printable character
       if (e.key.length === 1) {
-        // If the typing speed is slow (> maxIntervalMs), reset buffer unless it's starting fresh
-        if (interval > maxIntervalMs && bufferRef.current.length > 0) {
-          bufferRef.current = "";
+        if (interval <= maxIntervalMs) {
+          fastKeyCountRef.current += 1;
+        } else {
+          fastKeyCountRef.current = 0;
+          if (bufferRef.current.length > 0) {
+            bufferRef.current = "";
+          }
         }
 
         bufferRef.current += e.key;
 
-        // Auto-clear buffer after 300ms of inactivity to prevent accidental concatenation
+        // Auto-clear buffer after 250ms of inactivity
         setTimeout(() => {
-          if (Date.now() - lastKeyTimeRef.current >= 250) {
+          if (Date.now() - lastKeyTimeRef.current >= 200) {
             bufferRef.current = "";
+            fastKeyCountRef.current = 0;
           }
-        }, 300);
+        }, 250);
       }
     }
 

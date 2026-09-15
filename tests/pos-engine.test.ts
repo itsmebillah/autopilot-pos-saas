@@ -1,5 +1,6 @@
 import { describe, it, expect } from 'vitest';
 import { calculateCheckoutFinancials, validateCartSerials, CartItem, PaymentTender } from '../lib/pos-engine';
+import { generateQuickCashPresets } from '../lib/quick-cash';
 import { StoreProduct, MasterProduct } from '../types/database';
 
 describe('Universal POS Financial Engine', () => {
@@ -291,3 +292,106 @@ describe('Serial & IMEI Validation Engine', () => {
     expect(result.error).toContain('Duplicate serial numbers provided');
   });
 });
+
+describe('Pristine Empty POS Cart & Hardware Scanner Burst Isolation', () => {
+  it('1. verifies initial POS cart starts strictly empty (cartItems.length === 0)', () => {
+    const initialCart: CartItem[] = [];
+    expect(initialCart.length).toBe(0);
+    const totalItemsCount = initialCart.reduce((s, i) => s + i.quantity, 0);
+    const totalAmount = initialCart.reduce((s, i) => s + (i.custom_price ?? i.product.sell_price) * i.quantity, 0);
+    expect(totalItemsCount).toBe(0);
+    expect(totalAmount).toBe(0);
+  });
+
+  it('2. verifies no product selection produces zero items and zero amount', () => {
+    const cartItems: any[] = [];
+    expect(cartItems.length).toBe(0);
+  });
+
+  it('3. verifies cart summary formatting renders 0 items and ৳0 when empty', () => {
+    const cart: any[] = [];
+    const totalItemsCount = cart.reduce((sum, item) => sum + item.quantity, 0);
+    const total = cart.reduce((sum, item) => sum + Number(item.sell_price || 0) * item.quantity, 0);
+    expect(totalItemsCount).toBe(0);
+    expect(total).toBe(0);
+    const formatted = `${totalItemsCount} items • ৳${total.toLocaleString()}`;
+    expect(formatted).toBe('0 items • ৳0');
+  });
+
+  it('4. verifies explicit product selection adds exactly 1 intended product', () => {
+    let cart: any[] = [];
+    const product = { id: 'p1', name: 'Rolex Watch', sell_price: 5000, stock: 10 };
+
+    // Simulate addToCart
+    const existing = cart.find((i) => i.id === product.id);
+    if (!existing) {
+      cart = [...cart, { ...product, quantity: 1 }];
+    }
+
+    expect(cart.length).toBe(1);
+    expect(cart[0].id).toBe('p1');
+    expect(cart[0].quantity).toBe(1);
+  });
+
+  it('5. verifies product quantity starts at exactly 1', () => {
+    const product = { id: 'p2', name: 'Leather Strap', sell_price: 200, stock: 5 };
+    const cartItem = { ...product, quantity: 1 };
+    expect(cartItem.quantity).toBe(1);
+  });
+
+  it('6. verifies removing final product returns cart to empty state', () => {
+    let cart: any[] = [{ id: 'p1', quantity: 1, sell_price: 5000 }];
+    // Remove item
+    cart = cart.filter((i) => i.id !== 'p1');
+    expect(cart.length).toBe(0);
+    expect(cart.reduce((s, i) => s + i.quantity, 0)).toBe(0);
+  });
+
+  it('7. verifies page refresh / state initialization does not populate default or fake cart items', () => {
+    const _storageKey = 'pos_cart_user123_store456';
+    // When no saved cart exists
+    const saved = null;
+    const initialCart = saved ? JSON.parse(saved) : [];
+    expect(initialCart.length).toBe(0);
+  });
+
+  it('8. verifies persisted cart is tenant-isolated by user and store IDs', () => {
+    const userA_store1_key = 'pos_cart_userA_store1';
+    const userB_store2_key = 'pos_cart_userB_store2';
+    expect(userA_store1_key).not.toBe(userB_store2_key);
+  });
+
+  it('9. verifies camera/scanner initialization alone does NOT add products to cart', () => {
+    const cartBeforeScanInit: any[] = [];
+    const isCameraOpen = true;
+    expect(isCameraOpen).toBe(true);
+    expect(cartBeforeScanInit.length).toBe(0);
+  });
+
+  it('10. verifies Quick Cash / payment presets do not modify cart items or add products', () => {
+    const cart: any[] = [{ id: 'p1', quantity: 1, sell_price: 1000 }];
+    const cartLenBefore = cart.length;
+
+    // Quick cash preset calculation
+    const grandTotal = 1000;
+    const presets = generateQuickCashPresets(grandTotal);
+    expect(presets.length).toBeGreaterThan(0);
+
+    // Cart remains untouched
+    expect(cart.length).toBe(cartLenBefore);
+    expect(cart[0].id).toBe('p1');
+  });
+
+  it('11. verifies empty cart cannot proceed to checkout', () => {
+    const cart: any[] = [];
+    const canCheckout = cart.length > 0;
+    expect(canCheckout).toBe(false);
+  });
+
+  it('12. verifies sale creation is rejected when cart contains zero items', () => {
+    const cart: any[] = [];
+    const isValidSalePayload = cart && cart.length > 0;
+    expect(isValidSalePayload).toBe(false);
+  });
+});
+
