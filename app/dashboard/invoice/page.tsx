@@ -6,146 +6,162 @@ import { useEffect, useState, Suspense } from "react";
 import { useSearchParams } from "next/navigation";
 import Sidebar from "@/components/Sidebar";
 import Link from "next/link";
-import { Printer, ShoppingCart, LayoutDashboard } from "lucide-react";
+import { Printer, ShoppingCart, LayoutDashboard, Search, FileText } from "lucide-react";
+import InvoiceReceipt from "@/components/InvoiceReceipt";
+import { InvoiceData } from "@/lib/invoice-engine";
 
 function InvoiceContent() {
   const params = useSearchParams();
-  const invoice = params.get("invoice") || "INV-PROTOTYPE";
-  const total = params.get("total") || "0";
-  const itemsParam = params.get("items") || "[]";
+  const invoiceParam = params.get("invoice");
+  const idParam = params.get("id");
 
-  const [settings, setSettings] = useState<any>(null);
-  const [items, setItems] = useState<any[]>([]);
+  const [invoice, setInvoice] = useState<InvoiceData | null>(null);
+  const [selectedTemplate, setSelectedTemplate] = useState<"thermal_58mm" | "thermal_80mm" | "a4_standard">("thermal_80mm");
+  const [isLoading, setIsLoading] = useState(true);
+  const [lookupQuery, setLookupQuery] = useState(invoiceParam || "");
+
+  async function fetchInvoice(invoiceNo?: string, saleId?: string) {
+    try {
+      setIsLoading(true);
+      let url = "/api/sales/invoice?";
+      if (saleId) {
+        url += `id=${encodeURIComponent(saleId)}`;
+      } else if (invoiceNo) {
+        url += `invoice_no=${encodeURIComponent(invoiceNo)}`;
+      } else {
+        // Fetch latest sale as default preview
+        const salesRes = await fetch("/api/sales/list");
+        const salesData = await salesRes.json();
+        if (salesData.success && salesData.sales?.length > 0) {
+          url += `id=${encodeURIComponent(salesData.sales[0].id)}`;
+        } else {
+          setIsLoading(false);
+          return;
+        }
+      }
+
+      const res = await fetch(url);
+      const data = await res.json();
+      if (data.success && data.invoice) {
+        setInvoice(data.invoice);
+        setSelectedTemplate(data.invoice.config?.receipt_template || "thermal_80mm");
+      }
+    } catch (err) {
+      console.error("Failed to load invoice:", err);
+    } finally {
+      setIsLoading(false);
+    }
+  }
 
   useEffect(() => {
-    try {
-      setItems(JSON.parse(decodeURIComponent(itemsParam)));
-    } catch {
-      setItems([]);
-    }
+    fetchInvoice(invoiceParam || undefined, idParam || undefined);
+  }, [invoiceParam, idParam]);
 
-    async function loadSettings() {
-      try {
-        const res = await fetch("/api/settings");
-        const data = await res.json();
-        if (data.success) {
-          setSettings(data.settings);
-        }
-      } catch (err) {
-        console.error("Failed to load settings:", err);
-      }
+  function handleSearchSubmit(e: React.FormEvent) {
+    e.preventDefault();
+    if (lookupQuery.trim()) {
+      fetchInvoice(lookupQuery.trim());
     }
-    loadSettings();
-  }, [itemsParam]);
-
-  const now = new Date();
+  }
 
   return (
-    <div className="w-full max-w-xl mx-auto">
-      {/* Printable Receipt Card */}
-      <div className="bg-white text-black p-5 sm:p-8 rounded-2xl sm:rounded-3xl shadow-2xl print:p-0 print:shadow-none print:rounded-none">
-        {/* Receipt Header */}
-        <div className="text-center pb-6 border-b border-gray-200">
-          {settings?.logo_url && (
-            <img
-              src={settings.logo_url}
-              alt="Store Logo"
-              className="w-16 h-16 sm:w-20 sm:h-20 object-contain mx-auto mb-3 rounded-xl"
-            />
-          )}
+    <div className="w-full max-w-4xl mx-auto space-y-6">
+      {/* Top Controls Toolbar (Hidden on Print) */}
+      <div className="bg-gray-950 border border-white/10 p-4 sm:p-5 rounded-2xl sm:rounded-3xl flex flex-col md:flex-row md:items-center justify-between gap-4 no-print shadow-xl">
+        {/* Lookup Bar */}
+        <form onSubmit={handleSearchSubmit} className="relative flex-1 max-w-md">
+          <Search className="absolute left-3.5 top-1/2 -translate-y-1/2 text-gray-400 w-4 h-4" />
+          <input
+            type="text"
+            placeholder="Search invoice # (e.g. INV-STA-)..."
+            value={lookupQuery}
+            onChange={(e) => setLookupQuery(e.target.value)}
+            className="w-full pl-10 pr-4 py-2.5 rounded-xl bg-black/50 border border-white/10 text-white placeholder-gray-500 text-xs focus:outline-none focus:border-green-500 font-mono"
+          />
+        </form>
 
-          <h2 className="text-xl sm:text-2xl font-bold tracking-tight">
-            {settings?.store_name || "Autopilot POS Store"}
-          </h2>
-          <p className="text-xs sm:text-sm text-gray-500 mt-0.5">
-            {settings?.address || "Universal Retail Outlet"}
-          </p>
-          {settings?.phone && (
-            <p className="text-xs text-gray-500">Phone: {settings.phone}</p>
-          )}
+        {/* Template Switcher */}
+        <div className="flex items-center gap-1.5 bg-black/60 p-1 rounded-xl border border-white/10">
+          <button
+            type="button"
+            onClick={() => setSelectedTemplate("thermal_80mm")}
+            className={`px-3 py-1.5 rounded-lg text-xs font-semibold transition-all ${
+              selectedTemplate === "thermal_80mm"
+                ? "bg-green-500 text-black shadow"
+                : "text-gray-300 hover:text-white"
+            }`}
+          >
+            80mm Thermal
+          </button>
+          <button
+            type="button"
+            onClick={() => setSelectedTemplate("thermal_58mm")}
+            className={`px-3 py-1.5 rounded-lg text-xs font-semibold transition-all ${
+              selectedTemplate === "thermal_58mm"
+                ? "bg-green-500 text-black shadow"
+                : "text-gray-300 hover:text-white"
+            }`}
+          >
+            58mm Thermal
+          </button>
+          <button
+            type="button"
+            onClick={() => setSelectedTemplate("a4_standard")}
+            className={`px-3 py-1.5 rounded-lg text-xs font-semibold transition-all ${
+              selectedTemplate === "a4_standard"
+                ? "bg-green-500 text-black shadow"
+                : "text-gray-300 hover:text-white"
+            }`}
+          >
+            A4 Sheet
+          </button>
         </div>
 
-        {/* Transaction Metadata */}
-        <div className="grid grid-cols-2 gap-2 py-4 text-xs border-b border-gray-200">
-          <div>
-            <p className="text-gray-500">
-              <span className="font-semibold text-gray-700">Invoice:</span> {invoice}
-            </p>
-            <p className="text-gray-500">
-              <span className="font-semibold text-gray-700">Date:</span> {now.toLocaleDateString()}
-            </p>
-          </div>
-          <div className="text-right">
-            <p className="text-gray-500">
-              <span className="font-semibold text-gray-700">Time:</span> {now.toLocaleTimeString()}
-            </p>
-            <p className="text-gray-500">
-              <span className="font-semibold text-gray-700">Payment:</span> Cash / Paid
-            </p>
-          </div>
-        </div>
-
-        {/* Line Items List */}
-        <div className="py-4 space-y-2.5 border-b border-gray-200">
-          {items.length === 0 ? (
-            <div className="text-xs text-gray-400 text-center py-2">No line items in preview</div>
-          ) : (
-            items.map((item, idx) => (
-              <div key={idx} className="flex justify-between items-start text-xs sm:text-sm">
-                <div>
-                  <p className="font-semibold text-gray-900">{item.name}</p>
-                  <p className="text-xs text-gray-500">
-                    {item.quantity} $\times$ ৳{Number(item.sell_price || 0).toLocaleString()}
-                  </p>
-                </div>
-                <span className="font-bold text-gray-900 shrink-0">
-                  ৳{(Number(item.sell_price || 0) * item.quantity).toLocaleString()}
-                </span>
-              </div>
-            ))
-          )}
-        </div>
-
-        {/* Totals Summary */}
-        <div className="pt-4 space-y-1.5">
-          <div className="flex justify-between text-base sm:text-lg font-bold border-t border-gray-900 pt-2">
-            <span>Total Payable</span>
-            <span>৳{Number(total || 0).toLocaleString()}</span>
-          </div>
-        </div>
-
-        {/* Receipt Footer */}
-        <div className="mt-8 pt-4 border-t border-dashed border-gray-300 text-center text-xs text-gray-500">
-          <p>Thank you for shopping with us! ❤️</p>
-          <p className="text-[10px] text-gray-400 mt-1">Powered by Autopilot POS SaaS</p>
-        </div>
-      </div>
-
-      {/* Action Buttons (Hidden on Print) */}
-      <div className="mt-6 flex flex-col sm:flex-row items-center gap-3 print:hidden">
+        {/* Print Button */}
         <button
           type="button"
           onClick={() => window.print()}
-          className="w-full sm:w-auto flex-1 flex items-center justify-center gap-2 bg-green-500 hover:bg-green-400 text-black py-3 rounded-xl font-bold transition-all shadow-lg active:scale-95"
+          className="flex items-center justify-center gap-2 bg-green-500 hover:bg-green-400 text-black px-6 py-2.5 rounded-xl font-bold text-xs shadow-lg active:scale-95 transition-all cursor-pointer"
         >
-          <Printer size={18} />
+          <Printer size={16} />
           <span>Print Receipt</span>
         </button>
+      </div>
 
+      {/* Invoice Receipt Container */}
+      {isLoading ? (
+        <div className="py-20 text-center text-gray-400">Loading invoice data...</div>
+      ) : !invoice ? (
+        <div className="bg-white/5 border border-white/10 rounded-2xl p-12 text-center text-gray-400">
+          <FileText size={40} className="mx-auto mb-3 opacity-40" />
+          <h3 className="text-base font-bold text-white">Invoice Not Found</h3>
+          <p className="text-xs text-gray-400 mt-1">Please check the invoice number or select a sale from Order History.</p>
+        </div>
+      ) : (
+        <div className="bg-zinc-900 border border-white/10 p-4 sm:p-8 rounded-3xl shadow-2xl flex justify-center overflow-x-auto print:border-none print:shadow-none print:p-0 print:bg-white">
+          <InvoiceReceipt
+            invoice={invoice}
+            template={selectedTemplate}
+            isReprint={false}
+          />
+        </div>
+      )}
+
+      {/* Quick Navigation Links (Hidden on print) */}
+      <div className="flex flex-wrap items-center justify-center gap-3 no-print pt-2 pb-8">
         <Link
           href="/dashboard/sales"
-          className="w-full sm:w-auto flex-1 flex items-center justify-center gap-2 bg-white/10 hover:bg-white/20 text-white py-3 rounded-xl font-semibold transition-colors"
+          className="flex items-center gap-2 px-5 py-2.5 rounded-xl bg-white/10 hover:bg-white/20 text-white text-xs font-semibold transition-colors"
         >
-          <ShoppingCart size={18} />
-          <span>New Sale</span>
+          <ShoppingCart size={15} />
+          <span>Back to POS Register</span>
         </Link>
-
         <Link
-          href="/dashboard"
-          className="w-full sm:w-auto flex items-center justify-center gap-2 bg-white/5 hover:bg-white/10 text-gray-300 py-3 px-4 rounded-xl text-sm transition-colors"
+          href="/dashboard/orders"
+          className="flex items-center gap-2 px-5 py-2.5 rounded-xl bg-white/5 hover:bg-white/10 text-gray-300 text-xs font-semibold transition-colors"
         >
-          <LayoutDashboard size={16} />
-          <span>Dashboard</span>
+          <LayoutDashboard size={15} />
+          <span>View All Orders</span>
         </Link>
       </div>
     </div>
@@ -157,8 +173,8 @@ export default function InvoicePage() {
     <div className="min-h-screen bg-black text-white flex flex-col lg:flex-row">
       <Sidebar />
 
-      <main className="flex-1 w-full max-w-4xl mx-auto p-4 sm:p-6 lg:p-8 flex items-center justify-center">
-        <Suspense fallback={<div className="text-white text-center py-12">Loading invoice...</div>}>
+      <main className="flex-1 w-full max-w-6xl mx-auto p-3 sm:p-6 lg:p-8 flex justify-center">
+        <Suspense fallback={<div className="text-white text-center py-20">Loading invoice viewer...</div>}>
           <InvoiceContent />
         </Suspense>
       </main>
