@@ -9,15 +9,22 @@ if (!process.env.NEXT_PUBLIC_SUPABASE_ANON_KEY && typeof window !== "undefined")
 }
 
 /**
- * Standard Supabase client (Browser & Public API routes)
+ * Standard Supabase client (Browser & Server)
+ * In browser: strictly uses public anon key
+ * On server: uses service role key if available for backend operations, else anon key
  */
+const activeKey =
+  typeof window === "undefined" && supabaseServiceRoleKey
+    ? supabaseServiceRoleKey
+    : (supabaseAnonKey || "sb_anon_unconfigured");
+
 export const supabase = createClient(
   supabaseUrl,
-  supabaseAnonKey || "sb_anon_unconfigured",
+  activeKey,
   {
     auth: {
-      persistSession: true,
-      autoRefreshToken: true,
+      persistSession: typeof window !== "undefined",
+      autoRefreshToken: typeof window !== "undefined",
     },
   }
 );
