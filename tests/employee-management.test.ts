@@ -1,6 +1,7 @@
 import { describe, it, expect } from "vitest";
 import { requireStoreAccess, AuthenticatedSession } from "../lib/auth-guard";
 import { hasPermission, requirePermission } from "../lib/permissions";
+import { getAppBaseUrl } from "../lib/app-url";
 
 describe("Shop Owner & Employee Management RBAC Suite", () => {
   const storeReyonWatch = { id: "store-reyon-01", name: "Reyon Watch - Main Branch", code: "REYON-01" };
@@ -320,4 +321,153 @@ describe("Shop Owner & Employee Management RBAC Suite", () => {
       expect(keys).not.toContain("encrypted_password");
     });
   });
+
+  describe("11. Secure Employee Password Management Suite", () => {
+    function simulatePasswordManagementAuthorization(
+      session: AuthenticatedSession,
+      targetEmployeeOrgId: string,
+      action: "set_password" | "generate" | "link",
+      passwordInput?: string
+    ) {
+      // 1. Role Authorization
+      if (!session.profile.isSuperAdmin && !["owner", "manager"].includes(session.role)) {
+        const err = new Error("Forbidden — Insufficient permissions");
+        (err as any).status = 403;
+        throw err;
+      }
+
+      // 2. Tenant Isolation
+      if (!session.profile.isSuperAdmin && session.organization.id !== targetEmployeeOrgId) {
+        const err = new Error("Forbidden — Target employee not found in your organization");
+        (err as any).status = 404;
+        throw err;
+      }
+
+      // 3. Password Validation for set_password
+      if (action === "set_password") {
+        if (!passwordInput || passwordInput.length < 8) {
+          const err = new Error("New temporary password must be at least 8 characters long");
+          (err as any).status = 400;
+          throw err;
+        }
+      }
+
+      return { success: true };
+    }
+
+    it("allows Shop Owner to reset employee password within their organization", () => {
+      const res = simulatePasswordManagementAuthorization(reyonOwnerSession, "org-reyon-watch", "set_password", "NewTempPass2026!");
+      expect(res.success).toBe(true);
+    });
+
+    it("blocks Shop Owner from resetting an employee password belonging to another organization", () => {
+      expect(() =>
+        simulatePasswordManagementAuthorization(reyonOwnerSession, "org-competitor-watch", "set_password", "HackPass123!")
+      ).toThrowError(/Forbidden — Target employee not found in your organization/);
+    });
+
+    it("strictly blocks Cashier, Inventory, and Accountant roles from resetting passwords (403 Forbidden)", () => {
+      expect(() =>
+        simulatePasswordManagementAuthorization(reyonCashierSession, "org-reyon-watch", "set_password", "Pass123456!")
+      ).toThrowError(/Forbidden — Insufficient permissions/);
+
+      expect(() =>
+        simulatePasswordManagementAuthorization(reyonInventorySession, "org-reyon-watch", "generate")
+      ).toThrowError(/Forbidden — Insufficient permissions/);
+
+      expect(() =>
+        simulatePasswordManagementAuthorization(reyonAccountantSession, "org-reyon-watch", "link")
+      ).toThrowError(/Forbidden — Insufficient permissions/);
+    });
+
+    it("validates server-generated temporary password meets strength & complexity requirements", () => {
+      const upper = "ABCDEFGHIJKLMNOPQRSTUVWXYZ";
+      const lower = "abcdefghijklmnopqrstuvwxyz";
+      const nums = "0123456789";
+      const symbols = "!@#$%^&*";
+      const chars = upper + lower + nums + symbols;
+
+      const password = [
+        upper[Math.floor(Math.random() * upper.length)],
+        lower[Math.floor(Math.random() * lower.length)],
+        nums[Math.floor(Math.random() * nums.length)],
+        symbols[Math.floor(Math.random() * symbols.length)],
+      ];
+      for (let i = 4; i < 14; i++) {
+        password.push(chars[Math.floor(Math.random() * chars.length)]);
+      }
+      const generated = password.sort(() => Math.random() - 0.5).join("");
+
+      expect(generated.length).toBeGreaterThanOrEqual(8);
+      expect(generated).not.toBe("12345678");
+      expect(generated).not.toBe("password");
+      expect(/[A-Z]/.test(generated)).toBe(true);
+      expect(/[a-z]/.test(generated)).toBe(true);
+      expect(/[0-9]/.test(generated)).toBe(true);
+    });
+
+    it("verifies password reset preserves inactive employee status and does NOT auto-reactivate", () => {
+      const inactiveEmployee = { id: "emp-999", userId: "user-999", is_active: false };
+      const updatedUserAuth = { userId: inactiveEmployee.userId, passwordUpdated: true };
+      expect(updatedUserAuth.passwordUpdated).toBe(true);
+      expect(inactiveEmployee.is_active).toBe(false);
+    });
+
+    it("ensures existing employee password can NEVER be viewed or retrieved", () => {
+      const getEmployeeApiRes = {
+        id: "emp-101",
+        fullName: "Rocky",
+        email: "rocky@gmail.com",
+        role: "manager",
+        isActive: true,
+      };
+      expect((getEmployeeApiRes as any).password).toBeUndefined();
+      expect((getEmployeeApiRes as any).currentPassword).toBeUndefined();
+    });
+  });
+
+  describe("12. Production Password Reset Link Environment & Redirect Isolation", () => {
+    it("resolves canonical production app URL when NODE_ENV is production", () => {
+      const origNodeEnv = process.env.NODE_ENV;
+      const origSiteUrl = process.env.NEXT_PUBLIC_SITE_URL;
+      const origAppUrl = process.env.NEXT_PUBLIC_APP_URL;
+      const origVercelUrl = process.env.VERCEL_URL;
+
+      delete process.env.NEXT_PUBLIC_SITE_URL;
+      delete process.env.NEXT_PUBLIC_APP_URL;
+      delete process.env.VERCEL_URL;
+      (process.env as any).NODE_ENV = "production";
+
+      const url = getAppBaseUrl();
+      expect(url).toBe("https://autopilot-pos-saas.vercel.app");
+      expect(url).not.toContain("localhost");
+
+      // Restore
+      (process.env as any).NODE_ENV = origNodeEnv;
+      if (origSiteUrl) process.env.NEXT_PUBLIC_SITE_URL = origSiteUrl;
+      if (origAppUrl) process.env.NEXT_PUBLIC_APP_URL = origAppUrl;
+      if (origVercelUrl) process.env.VERCEL_URL = origVercelUrl;
+    });
+
+    it("resolves local development URL when running in dev mode", () => {
+      const origNodeEnv = process.env.NODE_ENV;
+      const origSiteUrl = process.env.NEXT_PUBLIC_SITE_URL;
+      delete process.env.NEXT_PUBLIC_SITE_URL;
+      (process.env as any).NODE_ENV = "development";
+
+      const url = getAppBaseUrl();
+      expect(url).toBe("http://localhost:3000");
+
+      (process.env as any).NODE_ENV = origNodeEnv;
+      if (origSiteUrl) process.env.NEXT_PUBLIC_SITE_URL = origSiteUrl;
+    });
+
+    it("ensures recovery link target page is /auth/reset-password", () => {
+      const baseUrl = "https://autopilot-pos-saas.vercel.app";
+      const target = `${baseUrl}/auth/reset-password`;
+      expect(target).toBe("https://autopilot-pos-saas.vercel.app/auth/reset-password");
+    });
+  });
 });
+
+

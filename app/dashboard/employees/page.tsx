@@ -112,15 +112,29 @@ export default function EmployeesPage() {
   // Password Reset Feedback
   const [recoveryLink, setRecoveryLink] = useState<{ email: string; link: string } | null>(null);
 
+  // Password Management Modal State
+  const [passwordModalEmployee, setPasswordModalEmployee] = useState<EmployeeItem | null>(null);
+  const [isPasswordModalOpen, setIsPasswordModalOpen] = useState(false);
+  const [passwordModalTab, setPasswordModalTab] = useState<"set" | "generate" | "link">("set");
+  const [tempPassword, setTempPassword] = useState("");
+  const [confirmTempPassword, setConfirmTempPassword] = useState("");
+  const [showTempPassword, setShowTempPassword] = useState(false);
+  const [showConfirmTempPassword, setShowConfirmTempPassword] = useState(false);
+  const [modalPasswordError, setModalPasswordError] = useState<string | null>(null);
+  const [modalPasswordSuccess, setModalPasswordSuccess] = useState<string | null>(null);
+  const [generatedTempPassword, setGeneratedTempPassword] = useState<string | null>(null);
+  const [recoveryActionLink, setRecoveryActionLink] = useState<string | null>(null);
+  const [isModalSubmitting, setIsModalSubmitting] = useState(false);
+
   // Compute available stores contextually
   const availableStores: StoreOption[] =
     stores.length > 0
       ? stores
       : user?.accessibleStores && user.accessibleStores.length > 0
-      ? user.accessibleStores
-      : user?.activeStore
-      ? [user.activeStore]
-      : [];
+        ? user.accessibleStores
+        : user?.activeStore
+          ? [user.activeStore]
+          : [];
 
   const fetchEmployees = useCallback(async () => {
     try {
@@ -266,20 +280,84 @@ export default function EmployeesPage() {
     }
   };
 
-  // Handle Trigger Password Reset
-  const handleResetPassword = async (employee: EmployeeItem) => {
-    try {
-      const res = await fetch(`/api/employees/${employee.id}/reset-password`, {
-        method: "POST",
-      });
-      const data = await res.json();
-      if (data.success && data.recoveryLink) {
-        setRecoveryLink({ email: employee.email, link: data.recoveryLink });
-      } else {
-        alert(data.message || "Password recovery initiated");
+  // Handle Password Management Modal Open/Close & Actions
+  const openPasswordModal = (employee: EmployeeItem) => {
+    setPasswordModalEmployee(employee);
+    setPasswordModalTab("set");
+    setTempPassword("");
+    setConfirmTempPassword("");
+    setShowTempPassword(false);
+    setShowConfirmTempPassword(false);
+    setModalPasswordError(null);
+    setModalPasswordSuccess(null);
+    setGeneratedTempPassword(null);
+    setRecoveryActionLink(null);
+    setIsPasswordModalOpen(true);
+  };
+
+  const closePasswordModal = () => {
+    setIsPasswordModalOpen(false);
+    setPasswordModalEmployee(null);
+    setTempPassword("");
+    setConfirmTempPassword("");
+    setShowTempPassword(false);
+    setShowConfirmTempPassword(false);
+    setModalPasswordError(null);
+    setModalPasswordSuccess(null);
+    setGeneratedTempPassword(null);
+    setRecoveryActionLink(null);
+  };
+
+  const handlePasswordActionSubmit = async (action: "set_password" | "generate" | "link") => {
+    if (!passwordModalEmployee) return;
+
+    setModalPasswordError(null);
+    setModalPasswordSuccess(null);
+
+    if (action === "set_password") {
+      if (!tempPassword || tempPassword.length < 8) {
+        setModalPasswordError("New temporary password must be at least 8 characters long.");
+        return;
       }
-    } catch (err) {
-      console.error("Password reset error:", err);
+      if (tempPassword !== confirmTempPassword) {
+        setModalPasswordError("Password and confirmation do not match.");
+        return;
+      }
+    }
+
+    setIsModalSubmitting(true);
+
+    try {
+      const res = await fetch(`/api/employees/${passwordModalEmployee.id}/reset-password`, {
+        method: "POST",
+        headers: { "Content-Type": "application/json" },
+        body: JSON.stringify({ action, password: tempPassword }),
+      });
+
+      const data = await res.json();
+      if (!res.ok || !data.success) {
+        throw new Error(data.message || "Failed to complete password management action.");
+      }
+
+      if (action === "set_password") {
+        setModalPasswordSuccess(data.message || "Temporary password updated successfully.");
+        setTempPassword("");
+        setConfirmTempPassword("");
+      } else if (action === "generate") {
+        setModalPasswordSuccess(data.message || "Temporary password generated successfully.");
+        setGeneratedTempPassword(data.temporaryPassword || null);
+      } else if (action === "link") {
+        setModalPasswordSuccess(data.message || "Password reset link generated successfully.");
+        setRecoveryActionLink(data.recoveryLink || null);
+        if (data.recoveryLink) {
+          setRecoveryLink({ email: passwordModalEmployee.email, link: data.recoveryLink });
+        }
+      }
+    } catch (err: unknown) {
+      const error = err as Error;
+      setModalPasswordError(error.message || "Operation failed.");
+    } finally {
+      setIsModalSubmitting(false);
     }
   };
 
@@ -601,9 +679,10 @@ export default function EmployeesPage() {
                         </button>
 
                         <button
-                          onClick={() => handleResetPassword(emp)}
-                          title="Generate Password Link"
-                          className="p-1.5 text-xs font-semibold rounded-xl bg-indigo-50 dark:bg-indigo-950/40 text-indigo-600 dark:text-indigo-400 hover:bg-indigo-100 dark:hover:bg-indigo-900/50 transition-colors shrink-0 cursor-pointer"
+                          onClick={() => openPasswordModal(emp)}
+                          title="Manage Password"
+                          aria-label="Manage Password"
+                          className="p-2 min-h-[44px] min-w-[44px] flex items-center justify-center text-xs font-semibold rounded-xl bg-indigo-50 dark:bg-indigo-950/40 text-indigo-600 dark:text-indigo-400 hover:bg-indigo-100 dark:hover:bg-indigo-900/50 transition-colors shrink-0 cursor-pointer"
                         >
                           <KeyRound size={15} />
                         </button>
@@ -611,11 +690,10 @@ export default function EmployeesPage() {
                         {!isSelf && (
                           <button
                             onClick={() => handleToggleStatus(emp)}
-                            className={`flex items-center justify-center gap-1 py-1.5 px-2.5 text-xs font-semibold rounded-xl transition-colors cursor-pointer ${
-                              emp.isActive
+                            className={`flex items-center justify-center gap-1 py-1.5 px-2.5 text-xs font-semibold rounded-xl transition-colors cursor-pointer ${emp.isActive
                                 ? "bg-red-50 dark:bg-red-950/30 text-red-600 dark:text-red-400 hover:bg-red-100"
                                 : "bg-green-50 dark:bg-green-950/30 text-green-600 dark:text-green-400 hover:bg-green-100"
-                            }`}
+                              }`}
                           >
                             {emp.isActive ? <UserX size={13} /> : <UserCheck size={13} />}
                             <span>{emp.isActive ? "Deactivate" : "Activate"}</span>
@@ -733,9 +811,10 @@ export default function EmployeesPage() {
                                 </button>
 
                                 <button
-                                  onClick={() => handleResetPassword(emp)}
-                                  title="Generate Password Setup Link"
-                                  className="p-1.5 rounded-lg text-indigo-600 dark:text-indigo-400 hover:bg-indigo-50 dark:hover:bg-indigo-950/40 transition-colors cursor-pointer"
+                                  onClick={() => openPasswordModal(emp)}
+                                  title="Manage Password"
+                                  aria-label="Manage Password"
+                                  className="p-2 min-h-[44px] min-w-[44px] inline-flex items-center justify-center rounded-lg text-indigo-600 dark:text-indigo-400 hover:bg-indigo-50 dark:hover:bg-indigo-950/40 transition-colors cursor-pointer"
                                 >
                                   <KeyRound size={15} />
                                 </button>
@@ -744,11 +823,10 @@ export default function EmployeesPage() {
                                   <button
                                     onClick={() => handleToggleStatus(emp)}
                                     title={emp.isActive ? "Deactivate" : "Activate"}
-                                    className={`p-1.5 rounded-lg transition-colors cursor-pointer ${
-                                      emp.isActive
+                                    className={`p-1.5 rounded-lg transition-colors cursor-pointer ${emp.isActive
                                         ? "text-red-600 dark:text-red-400 hover:bg-red-50 dark:hover:bg-red-950/40"
                                         : "text-green-600 dark:text-green-400 hover:bg-green-50 dark:hover:bg-green-950/40"
-                                    }`}
+                                      }`}
                                   >
                                     {emp.isActive ? <UserX size={15} /> : <UserCheck size={15} />}
                                   </button>
@@ -1088,6 +1166,286 @@ export default function EmployeesPage() {
                   </button>
                 </div>
               </form>
+            </div>
+          </div>
+        )}
+
+        {/* PASSWORD MANAGEMENT MODAL */}
+        {isPasswordModalOpen && passwordModalEmployee && (
+          <div className="fixed inset-0 z-50 flex items-center justify-center p-3 sm:p-4 bg-black/70 backdrop-blur-sm overflow-y-auto">
+            <div className="bg-white dark:bg-slate-900 rounded-3xl border border-slate-200 dark:border-slate-800 w-full max-w-md sm:max-w-lg overflow-hidden shadow-2xl max-h-[90vh] flex flex-col my-auto">
+              {/* Modal Header */}
+              <div className="px-5 py-4 border-b border-slate-200 dark:border-slate-800 flex items-center justify-between bg-slate-50/50 dark:bg-slate-800/30 shrink-0">
+                <div className="flex items-center gap-2.5 min-w-0">
+                  <div className="p-2 rounded-xl bg-indigo-500/10 text-indigo-600 dark:text-indigo-400 shrink-0">
+                    <KeyRound size={18} />
+                  </div>
+                  <div className="min-w-0">
+                    <h3 className="text-base font-extrabold text-slate-900 dark:text-white truncate">
+                      Password Management
+                    </h3>
+                    <p className="text-xs text-slate-500 dark:text-slate-400 truncate">
+                      {passwordModalEmployee.fullName} ({passwordModalEmployee.email})
+                    </p>
+                  </div>
+                </div>
+                <button
+                  type="button"
+                  onClick={closePasswordModal}
+                  className="text-slate-400 hover:text-slate-600 dark:hover:text-slate-200 p-1.5 rounded-lg cursor-pointer"
+                >
+                  ✕
+                </button>
+              </div>
+
+              {/* Security Policy Notice */}
+              <div className="p-4 bg-amber-500/10 border-b border-amber-500/20 text-amber-800 dark:text-amber-300 text-xs flex items-start gap-2.5 shrink-0">
+                <Shield size={16} className="text-amber-600 dark:text-amber-400 shrink-0 mt-0.5" />
+                <div>
+                  <p className="font-bold">Security & Privacy Policy</p>
+                  <p className="text-[11px] opacity-90 mt-0.5">
+                    For security, existing passwords cannot be viewed. You can set a new temporary password or send a password reset link.
+                  </p>
+                </div>
+              </div>
+
+              <div className="p-5 space-y-4 overflow-y-auto flex-1">
+                {/* Feedback Alerts */}
+                {modalPasswordError && (
+                  <div className="p-3 rounded-xl bg-red-500/10 border border-red-500/20 text-red-600 dark:text-red-400 text-xs font-semibold">
+                    {modalPasswordError}
+                  </div>
+                )}
+
+                {modalPasswordSuccess && (
+                  <div className="p-3 rounded-xl bg-green-500/10 border border-green-500/20 text-green-700 dark:text-green-400 text-xs font-semibold flex items-center gap-2">
+                    <CheckCircle2 size={16} className="shrink-0 text-green-600 dark:text-green-400" />
+                    <span>{modalPasswordSuccess}</span>
+                  </div>
+                )}
+
+                {/* Option Selector Tabs */}
+                <div className="flex bg-slate-100 dark:bg-slate-800 p-1 rounded-xl text-xs font-bold gap-1">
+                  <button
+                    type="button"
+                    onClick={() => {
+                      setPasswordModalTab("set");
+                      setModalPasswordError(null);
+                      setModalPasswordSuccess(null);
+                    }}
+                    className={`flex-1 py-2 px-2.5 rounded-lg transition-all cursor-pointer truncate ${
+                      passwordModalTab === "set"
+                        ? "bg-white dark:bg-slate-900 text-slate-900 dark:text-white shadow-sm"
+                        : "text-slate-600 dark:text-slate-400 hover:text-slate-900 dark:hover:text-white"
+                    }`}
+                  >
+                    Set Temporary
+                  </button>
+                  <button
+                    type="button"
+                    onClick={() => {
+                      setPasswordModalTab("generate");
+                      setModalPasswordError(null);
+                      setModalPasswordSuccess(null);
+                    }}
+                    className={`flex-1 py-2 px-2.5 rounded-lg transition-all cursor-pointer truncate ${
+                      passwordModalTab === "generate"
+                        ? "bg-white dark:bg-slate-900 text-slate-900 dark:text-white shadow-sm"
+                        : "text-slate-600 dark:text-slate-400 hover:text-slate-900 dark:hover:text-white"
+                    }`}
+                  >
+                    Generate
+                  </button>
+                  <button
+                    type="button"
+                    onClick={() => {
+                      setPasswordModalTab("link");
+                      setModalPasswordError(null);
+                      setModalPasswordSuccess(null);
+                    }}
+                    className={`flex-1 py-2 px-2.5 rounded-lg transition-all cursor-pointer truncate ${
+                      passwordModalTab === "link"
+                        ? "bg-white dark:bg-slate-900 text-slate-900 dark:text-white shadow-sm"
+                        : "text-slate-600 dark:text-slate-400 hover:text-slate-900 dark:hover:text-white"
+                    }`}
+                  >
+                    Reset Link
+                  </button>
+                </div>
+
+                {/* Tab 1: Set Temporary Password */}
+                {passwordModalTab === "set" && (
+                  <form
+                    onSubmit={(e) => {
+                      e.preventDefault();
+                      handlePasswordActionSubmit("set_password");
+                    }}
+                    className="space-y-3.5"
+                  >
+                    <div>
+                      <label className="block text-xs font-bold text-slate-700 dark:text-slate-300 mb-1">
+                        New Temporary Password *
+                      </label>
+                      <div className="relative">
+                        <input
+                          type={showTempPassword ? "text" : "password"}
+                          required
+                          minLength={8}
+                          placeholder="Minimum 8 characters"
+                          value={tempPassword}
+                          onChange={(e) => setTempPassword(e.target.value)}
+                          className="w-full pl-3.5 pr-9 py-2.5 text-xs font-semibold bg-slate-50 dark:bg-slate-800 text-slate-900 dark:text-white rounded-xl border border-slate-200 dark:border-slate-700 focus:outline-none focus:ring-2 focus:ring-indigo-500"
+                        />
+                        <button
+                          type="button"
+                          onClick={() => setShowTempPassword(!showTempPassword)}
+                          className="absolute right-2.5 top-1/2 -translate-y-1/2 text-slate-400 hover:text-slate-600 dark:hover:text-slate-200 p-1 cursor-pointer"
+                          aria-label={showTempPassword ? "Hide password" : "Show password"}
+                        >
+                          {showTempPassword ? <EyeOff size={14} /> : <Eye size={14} />}
+                        </button>
+                      </div>
+                    </div>
+
+                    <div>
+                      <label className="block text-xs font-bold text-slate-700 dark:text-slate-300 mb-1">
+                        Confirm Temporary Password *
+                      </label>
+                      <div className="relative">
+                        <input
+                          type={showConfirmTempPassword ? "text" : "password"}
+                          required
+                          minLength={8}
+                          placeholder="Re-enter password"
+                          value={confirmTempPassword}
+                          onChange={(e) => setConfirmTempPassword(e.target.value)}
+                          className="w-full pl-3.5 pr-9 py-2.5 text-xs font-semibold bg-slate-50 dark:bg-slate-800 text-slate-900 dark:text-white rounded-xl border border-slate-200 dark:border-slate-700 focus:outline-none focus:ring-2 focus:ring-indigo-500"
+                        />
+                        <button
+                          type="button"
+                          onClick={() => setShowConfirmTempPassword(!showConfirmTempPassword)}
+                          className="absolute right-2.5 top-1/2 -translate-y-1/2 text-slate-400 hover:text-slate-600 dark:hover:text-slate-200 p-1 cursor-pointer"
+                          aria-label={showConfirmTempPassword ? "Hide password" : "Show password"}
+                        >
+                          {showConfirmTempPassword ? <EyeOff size={14} /> : <Eye size={14} />}
+                        </button>
+                      </div>
+                    </div>
+
+                    <button
+                      type="submit"
+                      disabled={isModalSubmitting}
+                      className="w-full py-2.5 px-4 text-xs font-bold bg-indigo-600 hover:bg-indigo-500 text-white rounded-xl shadow-lg shadow-indigo-600/20 transition-all cursor-pointer flex items-center justify-center gap-2"
+                    >
+                      {isModalSubmitting ? "Updating..." : "Set Temporary Password"}
+                    </button>
+                  </form>
+                )}
+
+                {/* Tab 2: Generate Password */}
+                {passwordModalTab === "generate" && (
+                  <div className="space-y-4">
+                    <p className="text-xs text-slate-600 dark:text-slate-400">
+                      Generate a secure random temporary password on the server for{" "}
+                      <strong className="text-slate-900 dark:text-white">{passwordModalEmployee.fullName}</strong>.
+                    </p>
+
+                    {generatedTempPassword ? (
+                      <div className="p-3.5 rounded-2xl bg-indigo-500/10 border border-indigo-500/30 space-y-2">
+                        <div className="text-[11px] font-bold text-indigo-700 dark:text-indigo-300 uppercase tracking-wider">
+                          Generated Temporary Password (Shown Once)
+                        </div>
+                        <div className="flex items-center gap-2">
+                          <input
+                            type="text"
+                            readOnly
+                            value={generatedTempPassword}
+                            className="flex-1 px-3 py-2 text-sm font-mono font-bold bg-white dark:bg-slate-800 text-slate-900 dark:text-white rounded-xl border border-indigo-200 dark:border-indigo-800"
+                          />
+                          <button
+                            type="button"
+                            onClick={() => {
+                              navigator.clipboard.writeText(generatedTempPassword);
+                              alert("Temporary password copied to clipboard!");
+                            }}
+                            className="px-3 py-2 rounded-xl text-xs font-bold bg-indigo-600 hover:bg-indigo-500 text-white shrink-0 cursor-pointer"
+                          >
+                            Copy
+                          </button>
+                        </div>
+                        <p className="text-[10px] text-slate-500 dark:text-slate-400">
+                          Please communicate this temporary password securely to the employee. It will not be stored or shown again.
+                        </p>
+                      </div>
+                    ) : (
+                      <button
+                        type="button"
+                        onClick={() => handlePasswordActionSubmit("generate")}
+                        disabled={isModalSubmitting}
+                        className="w-full py-2.5 px-4 text-xs font-bold bg-indigo-600 hover:bg-indigo-500 text-white rounded-xl shadow-lg shadow-indigo-600/20 transition-all cursor-pointer flex items-center justify-center gap-2"
+                      >
+                        {isModalSubmitting ? "Generating..." : "Generate Temporary Password"}
+                      </button>
+                    )}
+                  </div>
+                )}
+
+                {/* Tab 3: Password Reset Link */}
+                {passwordModalTab === "link" && (
+                  <div className="space-y-4">
+                    <p className="text-xs text-slate-600 dark:text-slate-400">
+                      Send a secure password recovery link to{" "}
+                      <strong className="text-slate-900 dark:text-white">{passwordModalEmployee.email}</strong>.
+                    </p>
+
+                    {recoveryActionLink ? (
+                      <div className="p-3.5 rounded-2xl bg-indigo-500/10 border border-indigo-500/30 space-y-2">
+                        <div className="text-[11px] font-bold text-indigo-700 dark:text-indigo-300 uppercase tracking-wider">
+                          Password Reset Link
+                        </div>
+                        <div className="flex items-center gap-2">
+                          <input
+                            type="text"
+                            readOnly
+                            value={recoveryActionLink}
+                            className="flex-1 px-3 py-2 text-xs font-mono bg-white dark:bg-slate-800 text-slate-900 dark:text-white rounded-xl border border-indigo-200 dark:border-indigo-800 truncate"
+                          />
+                          <button
+                            type="button"
+                            onClick={() => {
+                              navigator.clipboard.writeText(recoveryActionLink);
+                              alert("Recovery link copied to clipboard!");
+                            }}
+                            className="px-3 py-2 rounded-xl text-xs font-bold bg-indigo-600 hover:bg-indigo-500 text-white shrink-0 cursor-pointer"
+                          >
+                            Copy Link
+                          </button>
+                        </div>
+                      </div>
+                    ) : (
+                      <button
+                        type="button"
+                        onClick={() => handlePasswordActionSubmit("link")}
+                        disabled={isModalSubmitting}
+                        className="w-full py-2.5 px-4 text-xs font-bold bg-indigo-600 hover:bg-indigo-500 text-white rounded-xl shadow-lg shadow-indigo-600/20 transition-all cursor-pointer flex items-center justify-center gap-2"
+                      >
+                        {isModalSubmitting ? "Generating Link..." : "Send Password Reset Link"}
+                      </button>
+                    )}
+                  </div>
+                )}
+              </div>
+
+              {/* Modal Footer */}
+              <div className="px-5 py-3 border-t border-slate-200 dark:border-slate-800 flex items-center justify-end bg-slate-50/50 dark:bg-slate-800/30 shrink-0">
+                <button
+                  type="button"
+                  onClick={closePasswordModal}
+                  className="px-4 py-2 text-xs font-bold text-slate-600 dark:text-slate-300 hover:bg-slate-100 dark:hover:bg-slate-800 rounded-xl transition-colors cursor-pointer"
+                >
+                  Close
+                </button>
+              </div>
             </div>
           </div>
         )}
