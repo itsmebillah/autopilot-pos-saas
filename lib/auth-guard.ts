@@ -60,9 +60,13 @@ export async function getAuthenticatedSession(): Promise<AuthenticatedSession | 
       .from("organization_members")
       .select("*, organizations(*)")
       .eq("user_id", user.id)
-      .eq("is_active", true)
       .limit(1)
       .single();
+
+    // If employee is deactivated, block session access immediately
+    if (orgMember && orgMember.is_active === false && !profile?.is_super_admin) {
+      return null;
+    }
 
     let primaryOrg: any = orgMember?.organizations;
 

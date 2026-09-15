@@ -82,7 +82,7 @@ In Phase 2, the prototype plaintext authentication mechanism (direct querying of
 
 ## 6. Automated Test Suite Verification
 
-Vitest test suite (`tests/auth-rbac.test.ts` and related suites) validates 85 critical authorization and business logic scenarios:
+Vitest test suite (`tests/auth-rbac.test.ts`, `tests/employee-management.test.ts`, `tests/platform-admin.test.ts`, and core suites) validates 109 critical authorization and business logic scenarios:
 
 ```bash
 $ npm test
@@ -96,9 +96,11 @@ $ npm test
 ✓ tests/bulk-import.test.ts (6 tests)
 ✓ tests/invoice-engine.test.ts (9 tests)
 ✓ tests/auth-rbac.test.ts (12 tests)
+✓ tests/platform-admin.test.ts (9 tests)
+✓ tests/employee-management.test.ts (15 tests)
 
-Test Files  10 passed (10)
-     Tests  85 passed (85)
+Test Files  12 passed (12)
+     Tests  109 passed (109)
 ```
 
 ---
@@ -111,10 +113,19 @@ Test Files  10 passed (10)
 
 ---
 
-## 8. Production Build & Deployment Verification
+## 8. Shop Owner & Employee Management
+
+- Dedicated staff management dashboard at `/dashboard/employees`.
+- Shop Owners (e.g. `itsmbillah@gmail.com` for Reyon Watch) can onboard, manage, change roles, and deactivate team employees strictly within their own organization.
+- Detailed architecture: `DOCS/SHOP_OWNER_EMPLOYEE_MANAGEMENT.md`.
+
+---
+
+## 9. Production Build & Deployment Verification
 
 - `npx tsc --noEmit`: **0 errors**
 - `npm run lint`: **0 errors**
 - `npm run build`: **Compiled successfully**
 - Production URL: `https://autopilot-pos-saas.vercel.app`
 - Verification Document: `DOCS/PHASE_2_FINAL_MULTI_SHOP_VERIFICATION.md`
+

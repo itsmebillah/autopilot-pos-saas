@@ -17,6 +17,7 @@ import {
   User,
   LogOut,
   Shield,
+  Users,
 } from "lucide-react";
 
 import ThemeToggle from "@/components/ThemeToggle";
@@ -44,13 +45,20 @@ export default function Sidebar() {
     };
   }, [isOpen]);
 
+  const isManagement = user?.role === "owner" || user?.role === "manager" || user?.isSuperAdmin;
+
   const navItems = [
     { href: "/dashboard", label: "Dashboard", icon: LayoutDashboard },
     { href: "/dashboard/sales", label: "Sales POS", icon: ShoppingCart },
     { href: "/dashboard/products", label: "Products", icon: Package },
     { href: "/dashboard/orders", label: "Orders History", icon: Receipt },
-    { href: "/dashboard/reports", label: "Reports", icon: BarChart3 },
-    { href: "/dashboard/settings", label: "Store Settings", icon: Settings },
+    ...(isManagement
+      ? [
+          { href: "/dashboard/employees", label: "Staff & Employees", icon: Users },
+          { href: "/dashboard/reports", label: "Reports", icon: BarChart3 },
+          { href: "/dashboard/settings", label: "Store Settings", icon: Settings },
+        ]
+      : []),
   ];
 
   return (
