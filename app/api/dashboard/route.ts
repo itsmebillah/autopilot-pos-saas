@@ -4,12 +4,17 @@ import { requireAuth } from "@/lib/auth-guard";
 
 export async function GET() {
   try {
-    await requireAuth();
+    const session = await requireAuth();
+
+    let salesQuery = supabase.from("sales").select("id, total");
+    if (session.store?.id && session.store.id !== "00000000-0000-0000-0000-000000000000") {
+      salesQuery = salesQuery.or(`store_id.eq.${session.store.id},store_id.is.null`);
+    }
 
     const [productsRes, customersRes, salesRes] = await Promise.all([
       supabase.from("products").select("id, stock, sell_price"),
       supabase.from("customers").select("id"),
-      supabase.from("sales").select("id, total"),
+      salesQuery,
     ]);
 
     const products = productsRes.data || [];
