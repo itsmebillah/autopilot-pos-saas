@@ -73,4 +73,22 @@ describe("Bulk Product Import & CSV Parser Engine", () => {
 
     expect(validated[0].errors).toContain("Product name is required");
   });
+
+  it("maps separate purchase_cost and additional_cost columns and computes landed buy_price", () => {
+    const rawRows = [
+      { Title: "Product X", SupplierCost: "1000", ExtraCost: "35", Retail: "1500" },
+    ];
+    const mapping: ColumnMapping = {
+      name: "Title",
+      purchase_cost: "SupplierCost",
+      additional_cost: "ExtraCost",
+      sell_price: "Retail",
+    };
+    const validated = mapAndValidateImportRows(rawRows, mapping);
+
+    expect(validated[0].purchase_cost).toBe(1000);
+    expect(validated[0].additional_cost).toBe(35);
+    expect(validated[0].buy_price).toBe(1035);
+    expect(validated[0].sell_price).toBe(1500);
+  });
 });

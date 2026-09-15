@@ -2,6 +2,7 @@ import { supabase } from "@/lib/supabase";
 import { NextResponse } from "next/server";
 import { generateStoreBarcode } from "@/lib/barcode-engine";
 import { requireAuth, requireRole } from "@/lib/auth-guard";
+import { resolveProductCost } from "@/lib/product-costing";
 
 export async function POST(req: Request) {
   try {
@@ -14,6 +15,9 @@ export async function POST(req: Request) {
       name,
       barcode,
       category = "General",
+      purchase_cost,
+      additional_cost,
+      cost_breakdown,
       buy_price = 0,
       sell_price = 0,
       stock = 0,
@@ -27,13 +31,20 @@ export async function POST(req: Request) {
       );
     }
 
-    const numericBuyPrice = parseFloat(buy_price) || 0;
-    const numericSellPrice = parseFloat(sell_price) || 0;
+    const costResolution = resolveProductCost({
+      purchase_cost,
+      additional_cost,
+      cost_breakdown,
+      buy_price,
+      sell_price,
+    });
+
+    const numericSellPrice = costResolution.sellPrice;
     const numericStock = parseFloat(stock) || 0;
 
-    if (numericSellPrice < 0 || numericBuyPrice < 0) {
+    if (numericSellPrice < 0 || costResolution.landedCost < 0 || costResolution.purchaseCost < 0 || costResolution.additionalCost < 0) {
       return NextResponse.json(
-        { success: false, message: "Prices cannot be negative" },
+        { success: false, message: "Prices and costs cannot be negative" },
         { status: 400 }
       );
     }
@@ -74,7 +85,10 @@ export async function POST(req: Request) {
       name: name.trim(),
       barcode: finalBarcode,
       category: (category || "General").trim(),
-      buy_price: numericBuyPrice,
+      purchase_cost: costResolution.purchaseCost,
+      additional_cost: costResolution.additionalCost,
+      cost_breakdown: costResolution.costBreakdown,
+      buy_price: costResolution.landedCost, // Authoritative Landed Cost
       sell_price: numericSellPrice,
       stock: numericStock,
       min_stock: parseFloat(body.min_stock) || 5,

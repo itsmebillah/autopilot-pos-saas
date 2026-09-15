@@ -65,7 +65,9 @@ export default function BulkImportModal({
         if (norm.includes("barcode") || norm.includes("upc") || norm.includes("ean")) autoMap.barcode = h;
         if (norm.includes("sku") || norm.includes("code")) autoMap.sku = h;
         if (norm.includes("category") || norm.includes("type")) autoMap.category = h;
-        if (norm.includes("buy") || norm.includes("cost") || norm.includes("purchase")) autoMap.buy_price = h;
+        if (norm.includes("purchasecost") || norm.includes("supplierprice") || (norm.includes("purchase") && !norm.includes("additional"))) autoMap.purchase_cost = h;
+        else if (norm.includes("additional") || norm.includes("extra") || norm.includes("packaging") || norm.includes("freight")) autoMap.additional_cost = h;
+        else if (norm.includes("buy") || norm.includes("cost") || norm.includes("landed")) autoMap.buy_price = h;
         if (norm.includes("sell") || norm.includes("price") || norm.includes("retail")) autoMap.sell_price = h;
         if (norm.includes("stock") || norm.includes("qty") || norm.includes("quantity")) autoMap.stock = h;
         if (norm.includes("min") || norm.includes("reorder") || norm.includes("alert")) autoMap.min_stock = h;
@@ -263,7 +265,39 @@ export default function BulkImportModal({
                 </div>
 
                 <div>
-                  <label className="text-xs font-bold text-slate-700 dark:text-gray-300 block mb-1">Cost / Buy Price</label>
+                  <label className="text-xs font-bold text-slate-700 dark:text-gray-300 block mb-1">Purchase Cost (Supplier Price)</label>
+                  <select
+                    value={mapping.purchase_cost || ""}
+                    onChange={(e) => setMapping({ ...mapping, purchase_cost: e.target.value })}
+                    className="w-full p-2.5 rounded-xl bg-slate-50 dark:bg-black border border-slate-300 dark:border-gray-700 text-slate-900 dark:text-white text-xs"
+                  >
+                    <option value="">-- Optional --</option>
+                    {csvHeaders.map((h) => (
+                      <option key={h} value={h}>
+                        {h}
+                      </option>
+                    ))}
+                  </select>
+                </div>
+
+                <div>
+                  <label className="text-xs font-bold text-slate-700 dark:text-gray-300 block mb-1">Additional Cost (Packaging/Freight)</label>
+                  <select
+                    value={mapping.additional_cost || ""}
+                    onChange={(e) => setMapping({ ...mapping, additional_cost: e.target.value })}
+                    className="w-full p-2.5 rounded-xl bg-slate-50 dark:bg-black border border-slate-300 dark:border-gray-700 text-slate-900 dark:text-white text-xs"
+                  >
+                    <option value="">-- Optional --</option>
+                    {csvHeaders.map((h) => (
+                      <option key={h} value={h}>
+                        {h}
+                      </option>
+                    ))}
+                  </select>
+                </div>
+
+                <div>
+                  <label className="text-xs font-bold text-slate-700 dark:text-gray-300 block mb-1">Cost / Landed Price (Combined)</label>
                   <select
                     value={mapping.buy_price || ""}
                     onChange={(e) => setMapping({ ...mapping, buy_price: e.target.value })}

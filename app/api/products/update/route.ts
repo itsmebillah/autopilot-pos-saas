@@ -1,6 +1,7 @@
 import { supabase } from "@/lib/supabase";
 import { NextResponse } from "next/server";
 import { requireAuth, requireRole } from "@/lib/auth-guard";
+import { resolveProductCost } from "@/lib/product-costing";
 
 export async function POST(req: Request) {
   try {
@@ -13,6 +14,9 @@ export async function POST(req: Request) {
       name,
       barcode,
       category = "General",
+      purchase_cost,
+      additional_cost,
+      cost_breakdown,
       buy_price = 0,
       sell_price = 0,
       stock = 0,
@@ -32,8 +36,15 @@ export async function POST(req: Request) {
       );
     }
 
-    const numericBuyPrice = parseFloat(buy_price) || 0;
-    const numericSellPrice = parseFloat(sell_price) || 0;
+    const costResolution = resolveProductCost({
+      purchase_cost,
+      additional_cost,
+      cost_breakdown,
+      buy_price,
+      sell_price,
+    });
+
+    const numericSellPrice = costResolution.sellPrice;
     const numericStock = parseFloat(stock) || 0;
 
     // Check barcode collision if barcode changed
@@ -60,7 +71,10 @@ export async function POST(req: Request) {
       name: name.trim(),
       barcode: barcode ? barcode.trim() : null,
       category: (category || "General").trim(),
-      buy_price: numericBuyPrice,
+      purchase_cost: costResolution.purchaseCost,
+      additional_cost: costResolution.additionalCost,
+      cost_breakdown: costResolution.costBreakdown,
+      buy_price: costResolution.landedCost, // Canonical Landed Cost
       sell_price: numericSellPrice,
       stock: numericStock,
     };

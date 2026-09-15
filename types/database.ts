@@ -147,6 +147,22 @@ export interface Category {
   created_at: string;
 }
 
+export interface Product {
+  id: string;
+  name: string;
+  barcode: string | null;
+  category: string;
+  purchase_cost: number;
+  additional_cost: number;
+  cost_breakdown?: Record<string, number>;
+  buy_price: number; // Canonical Landed Cost
+  sell_price: number;
+  stock: number;
+  min_stock?: number;
+  created_at?: string;
+  updated_at?: string;
+}
+
 export interface MasterProduct {
   id: string;
   organization_id: string;
@@ -157,6 +173,9 @@ export interface MasterProduct {
   master_sku: string | null;
   master_barcode: string | null;
   unit: string;
+  default_purchase_cost?: number;
+  default_additional_cost?: number;
+  cost_breakdown?: Record<string, number>;
   default_buy_price: number;
   default_sell_price: number;
   tax_rate: number | null;
@@ -179,6 +198,9 @@ export interface StoreProduct {
   store_barcode: string | null;
   sell_price: number;
   cost_price: number;
+  purchase_cost?: number;
+  additional_cost?: number;
+  cost_breakdown?: Record<string, number>;
   current_stock: number;
   reorder_level: number;
   tax_rate_override: number | null;

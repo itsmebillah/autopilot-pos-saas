@@ -20,15 +20,27 @@ export async function POST(req: Request) {
       );
     }
 
-    const payload = products.map((p) => ({
-      name: p.name,
-      barcode: p.barcode,
-      category: p.category || "General",
-      buy_price: parseFloat(p.buy_price) || 0,
-      sell_price: parseFloat(p.sell_price) || 0,
-      stock: parseFloat(p.stock) || 0,
-      min_stock: parseFloat(p.min_stock) || 5,
-    }));
+    const payload = products.map((p) => {
+      const pCost = p.purchase_cost !== undefined ? parseFloat(p.purchase_cost) || 0 : undefined;
+      const aCost = p.additional_cost !== undefined ? parseFloat(p.additional_cost) || 0 : undefined;
+      const bPrice = parseFloat(p.buy_price) || 0;
+
+      const finalPurchaseCost = pCost !== undefined ? pCost : bPrice;
+      const finalAdditionalCost = aCost !== undefined ? aCost : 0;
+      const finalBuyPrice = pCost !== undefined || aCost !== undefined ? finalPurchaseCost + finalAdditionalCost : bPrice;
+
+      return {
+        name: p.name,
+        barcode: p.barcode,
+        category: p.category || "General",
+        purchase_cost: finalPurchaseCost,
+        additional_cost: finalAdditionalCost,
+        buy_price: finalBuyPrice,
+        sell_price: parseFloat(p.sell_price) || 0,
+        stock: parseFloat(p.stock) || 0,
+        min_stock: parseFloat(p.min_stock) || 5,
+      };
+    });
 
     const { data, error } = await supabase.from("products").insert(payload).select();
 

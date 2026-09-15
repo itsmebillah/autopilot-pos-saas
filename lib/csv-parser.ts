@@ -13,7 +13,9 @@ export interface ProductImportRow {
   barcode: string;
   sku?: string;
   category?: string;
-  buy_price: number;
+  purchase_cost?: number;
+  additional_cost?: number;
+  buy_price: number; // Landed Cost
   sell_price: number;
   stock: number;
   min_stock: number;
@@ -94,6 +96,8 @@ export interface ColumnMapping {
   barcode?: string;
   sku?: string;
   category?: string;
+  purchase_cost?: string;
+  additional_cost?: string;
   buy_price?: string;
   sell_price?: string;
   stock?: string;
@@ -147,10 +151,27 @@ export function mapAndValidateImportRows(
     const sku = mapping.sku ? raw[mapping.sku]?.trim() : undefined;
     const category = mapping.category ? raw[mapping.category]?.trim() : "General";
 
-    const buyPriceRaw = mapping.buy_price ? raw[mapping.buy_price]?.trim() : "0";
-    const buy_price = parseFloat(buyPriceRaw) || 0;
+    const purchaseCostRaw = mapping.purchase_cost ? raw[mapping.purchase_cost]?.trim() : undefined;
+    const additionalCostRaw = mapping.additional_cost ? raw[mapping.additional_cost]?.trim() : undefined;
+    const buyPriceRaw = mapping.buy_price ? raw[mapping.buy_price]?.trim() : undefined;
+
+    let purchase_cost = purchaseCostRaw !== undefined ? parseFloat(purchaseCostRaw) || 0 : undefined;
+    let additional_cost = additionalCostRaw !== undefined ? parseFloat(additionalCostRaw) || 0 : undefined;
+    let buy_price = buyPriceRaw !== undefined ? parseFloat(buyPriceRaw) || 0 : 0;
+
+    if (purchase_cost !== undefined || additional_cost !== undefined) {
+      const pCost = purchase_cost || 0;
+      const aCost = additional_cost || 0;
+      buy_price = pCost + aCost;
+      purchase_cost = pCost;
+      additional_cost = aCost;
+    } else {
+      purchase_cost = buy_price;
+      additional_cost = 0;
+    }
+
     if (isNaN(buy_price) || buy_price < 0) {
-      errors.push("Invalid buy price");
+      errors.push("Invalid buy/landed price");
     }
 
     const sellPriceRaw = mapping.sell_price ? raw[mapping.sell_price]?.trim() : "0";
@@ -173,6 +194,8 @@ export function mapAndValidateImportRows(
       barcode,
       sku,
       category: category || "General",
+      purchase_cost,
+      additional_cost,
       buy_price,
       sell_price,
       stock,
