@@ -1,9 +1,21 @@
 "use client";
 
-import { useEffect, useState } from "react";
+import { useEffect, useState, useCallback } from "react";
 import Sidebar from "@/components/Sidebar";
 import { useRouter } from "next/navigation";
-import { ShoppingCart, Search, Plus, Minus, Trash2, CheckCircle2, ArrowRight } from "lucide-react";
+import {
+  ShoppingCart,
+  Search,
+  Plus,
+  Minus,
+  Trash2,
+  CheckCircle2,
+  ArrowRight,
+  Camera,
+  Barcode,
+} from "lucide-react";
+import { useBarcodeScanner } from "@/hooks/useBarcodeScanner";
+import CameraBarcodeScanner from "@/components/CameraBarcodeScanner";
 
 export default function SalesPage() {
   const [products, setProducts] = useState<any[]>([]);
@@ -12,6 +24,8 @@ export default function SalesPage() {
   const [selectedCategory, setSelectedCategory] = useState<string>("ALL");
   const [isSubmitting, setIsSubmitting] = useState(false);
   const [mobileCartOpen, setMobileCartOpen] = useState(false);
+  const [isCameraScannerOpen, setIsCameraScannerOpen] = useState(false);
+  const [lastScannedFeedback, setLastScannedFeedback] = useState<string | null>(null);
   const router = useRouter();
 
   async function loadProducts() {
@@ -30,34 +44,63 @@ export default function SalesPage() {
     loadProducts();
   }, []);
 
-  function addToCart(product: any) {
-    if (Number(product.stock) <= 0) {
-      alert("Product is out of stock!");
-      return;
-    }
-
-    const existing = cart.find((item) => item.id === product.id);
-
-    if (existing) {
-      if (existing.quantity >= Number(product.stock)) {
-        alert(`Cannot add more than available stock (${product.stock})`);
+  const addToCart = useCallback(
+    (product: any) => {
+      if (Number(product.stock) <= 0) {
+        alert(`"${product.name}" is out of stock!`);
         return;
       }
-      setCart(
-        cart.map((item) =>
-          item.id === product.id ? { ...item, quantity: item.quantity + 1 } : item
-        )
+
+      setCart((prevCart) => {
+        const existing = prevCart.find((item) => item.id === product.id);
+
+        if (existing) {
+          if (existing.quantity >= Number(product.stock)) {
+            alert(`Cannot add more than available stock (${product.stock})`);
+            return prevCart;
+          }
+          return prevCart.map((item) =>
+            item.id === product.id ? { ...item, quantity: item.quantity + 1 } : item
+          );
+        } else {
+          return [
+            ...prevCart,
+            {
+              ...product,
+              quantity: 1,
+            },
+          ];
+        }
+      });
+    },
+    []
+  );
+
+  // Handle scanned barcode (from hardware scanner or mobile camera)
+  const handleScannedBarcode = useCallback(
+    (scannedCode: string) => {
+      const trimmed = scannedCode.trim().toLowerCase();
+      const matched = products.find(
+        (p) => (p.barcode || "").toLowerCase() === trimmed || (p.id || "").toLowerCase() === trimmed
       );
-    } else {
-      setCart([
-        ...cart,
-        {
-          ...product,
-          quantity: 1,
-        },
-      ]);
-    }
-  }
+
+      if (matched) {
+        addToCart(matched);
+        setLastScannedFeedback(`Added ${matched.name}`);
+        setTimeout(() => setLastScannedFeedback(null), 1500);
+      } else {
+        setLastScannedFeedback(`Barcode "${scannedCode}" not found`);
+        setTimeout(() => setLastScannedFeedback(null), 2000);
+      }
+    },
+    [products, addToCart]
+  );
+
+  // Global Hardware USB/Bluetooth Scanner hook
+  useBarcodeScanner({
+    onScan: handleScannedBarcode,
+    enabled: true,
+  });
 
   function updateQuantity(productId: string, delta: number) {
     const existing = cart.find((item) => item.id === productId);
@@ -155,18 +198,41 @@ export default function SalesPage() {
           </button>
         </div>
 
-        {/* Search & Category Filter */}
+        {/* Search, Barcode Scanner & Category Filter */}
         <div className="space-y-3 mb-5">
-          <div className="relative">
-            <Search className="absolute left-3.5 top-1/2 -translate-y-1/2 text-gray-400 w-4 h-4" />
-            <input
-              type="text"
-              placeholder="Search by product name or barcode..."
-              value={search}
-              onChange={(e) => setSearch(e.target.value)}
-              className="w-full pl-10 pr-4 py-2.5 sm:py-3 rounded-xl bg-white/5 border border-white/10 text-white placeholder-gray-500 text-sm focus:outline-none focus:border-green-500 transition-colors"
-            />
+          <div className="flex items-center gap-2">
+            <div className="relative flex-1">
+              <Search className="absolute left-3.5 top-1/2 -translate-y-1/2 text-gray-400 w-4 h-4" />
+              <input
+                type="text"
+                placeholder="Search by product name, SKU, or scan barcode..."
+                value={search}
+                onChange={(e) => setSearch(e.target.value)}
+                className="w-full pl-10 pr-4 py-2.5 sm:py-3 rounded-xl bg-white/5 border border-white/10 text-white placeholder-gray-500 text-sm focus:outline-none focus:border-green-500 transition-colors"
+              />
+            </div>
+
+            <button
+              type="button"
+              onClick={() => setIsCameraScannerOpen(true)}
+              className="flex items-center gap-2 bg-green-500 text-black hover:bg-green-400 px-3.5 sm:px-4 py-2.5 sm:py-3 rounded-xl text-xs sm:text-sm font-bold shadow-lg shadow-green-500/20 active:scale-95 transition-all shrink-0"
+              title="Scan Barcode with Camera"
+            >
+              <Camera size={18} />
+              <span className="hidden sm:inline">Camera Scan</span>
+            </button>
           </div>
+
+          {/* Scanned Real-time Toast/Feedback */}
+          {lastScannedFeedback && (
+            <div className="bg-green-500/20 border border-green-500/40 text-green-300 text-xs px-3.5 py-2 rounded-xl flex items-center justify-between animate-fadeIn">
+              <div className="flex items-center gap-2">
+                <Barcode size={16} className="text-green-400" />
+                <span className="font-semibold">{lastScannedFeedback}</span>
+              </div>
+              <span className="text-[10px] text-green-400 font-mono">USB / Cam Ready</span>
+            </div>
+          )}
 
           {/* Category Filter Pills */}
           <div className="flex items-center gap-2 overflow-x-auto pb-1 no-scrollbar">
@@ -359,6 +425,16 @@ export default function SalesPage() {
             </div>
           </div>
         </div>
+
+        {/* Camera Barcode Scanner Modal */}
+        <CameraBarcodeScanner
+          isOpen={isCameraScannerOpen}
+          onClose={() => setIsCameraScannerOpen(false)}
+          onScan={(code) => {
+            handleScannedBarcode(code);
+          }}
+          continuous={true}
+        />
       </main>
     </div>
   );
