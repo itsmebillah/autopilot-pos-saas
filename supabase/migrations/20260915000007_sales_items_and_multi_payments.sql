@@ -23,6 +23,28 @@ CREATE TABLE IF NOT EXISTS sales (
     UNIQUE(store_id, invoice_no)
 );
 
+-- Defensive reconciliation for existing sales table
+ALTER TABLE sales ADD COLUMN IF NOT EXISTS store_id UUID REFERENCES stores(id) ON DELETE SET NULL;
+ALTER TABLE sales ADD COLUMN IF NOT EXISTS cashier_id UUID REFERENCES auth.users(id) ON DELETE SET NULL;
+ALTER TABLE sales ADD COLUMN IF NOT EXISTS discount_amount NUMERIC(12,2) DEFAULT 0.00;
+ALTER TABLE sales ADD COLUMN IF NOT EXISTS tax_amount NUMERIC(12,2) DEFAULT 0.00;
+ALTER TABLE sales ADD COLUMN IF NOT EXISTS paid_amount NUMERIC(12,2) DEFAULT 0.00;
+ALTER TABLE sales ADD COLUMN IF NOT EXISTS change_amount NUMERIC(12,2) DEFAULT 0.00;
+ALTER TABLE sales ADD COLUMN IF NOT EXISTS due_amount NUMERIC(12,2) DEFAULT 0.00;
+ALTER TABLE sales ADD COLUMN IF NOT EXISTS total_cost NUMERIC(12,2) DEFAULT 0.00;
+ALTER TABLE sales ADD COLUMN IF NOT EXISTS total_profit NUMERIC(12,2) DEFAULT 0.00;
+ALTER TABLE sales ADD COLUMN IF NOT EXISTS payment_status VARCHAR(50) DEFAULT 'PAID';
+ALTER TABLE sales ADD COLUMN IF NOT EXISTS sale_status VARCHAR(50) DEFAULT 'COMPLETED';
+ALTER TABLE sales ADD COLUMN IF NOT EXISTS notes TEXT;
+ALTER TABLE sales ADD COLUMN IF NOT EXISTS updated_at TIMESTAMPTZ DEFAULT NOW();
+
+-- Safely backfill financial fields for legacy prototype sales records
+UPDATE sales
+SET paid_amount = COALESCE(total, 0),
+    discount_amount = COALESCE(discount, 0),
+    tax_amount = COALESCE(tax, 0)
+WHERE paid_amount = 0 AND total > 0;
+
 CREATE INDEX IF NOT EXISTS idx_sales_store_created ON sales(store_id, created_at DESC);
 CREATE INDEX IF NOT EXISTS idx_sales_customer ON sales(customer_id);
 
@@ -45,6 +67,27 @@ CREATE TABLE IF NOT EXISTS sale_items (
     profit NUMERIC(12,2) NOT NULL,
     created_at TIMESTAMPTZ NOT NULL DEFAULT NOW()
 );
+
+-- Defensive reconciliation for existing sale_items table
+ALTER TABLE sale_items ADD COLUMN IF NOT EXISTS variant_id UUID REFERENCES product_variants(id) ON DELETE SET NULL;
+ALTER TABLE sale_items ADD COLUMN IF NOT EXISTS product_name VARCHAR(255);
+ALTER TABLE sale_items ADD COLUMN IF NOT EXISTS serial_numbers JSONB DEFAULT '[]'::jsonb;
+ALTER TABLE sale_items ADD COLUMN IF NOT EXISTS batch_number VARCHAR(100);
+ALTER TABLE sale_items ADD COLUMN IF NOT EXISTS unit_price NUMERIC(12,2) DEFAULT 0.00;
+ALTER TABLE sale_items ADD COLUMN IF NOT EXISTS unit_cost NUMERIC(12,2) DEFAULT 0.00;
+ALTER TABLE sale_items ADD COLUMN IF NOT EXISTS subtotal NUMERIC(12,2) DEFAULT 0.00;
+ALTER TABLE sale_items ADD COLUMN IF NOT EXISTS discount_amount NUMERIC(12,2) DEFAULT 0.00;
+ALTER TABLE sale_items ADD COLUMN IF NOT EXISTS tax_amount NUMERIC(12,2) DEFAULT 0.00;
+ALTER TABLE sale_items ADD COLUMN IF NOT EXISTS total NUMERIC(12,2) DEFAULT 0.00;
+ALTER TABLE sale_items ADD COLUMN IF NOT EXISTS profit NUMERIC(12,2) DEFAULT 0.00;
+
+-- Safely backfill line items monetary fields
+UPDATE sale_items
+SET unit_price = COALESCE(price, 0),
+    unit_cost = COALESCE(cost, 0),
+    subtotal = COALESCE(price * quantity, 0),
+    total = COALESCE(price * quantity, 0)
+WHERE unit_price = 0 AND price > 0;
 
 CREATE INDEX IF NOT EXISTS idx_sale_items_sale_id ON sale_items(sale_id);
 CREATE INDEX IF NOT EXISTS idx_sale_items_product_id ON sale_items(product_id);

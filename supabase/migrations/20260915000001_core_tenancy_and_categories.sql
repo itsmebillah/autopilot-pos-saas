@@ -13,7 +13,7 @@ CREATE TABLE IF NOT EXISTS shop_categories (
 CREATE TABLE IF NOT EXISTS organizations (
     id UUID PRIMARY KEY DEFAULT gen_random_uuid(),
     name VARCHAR(255) NOT NULL,
-    slug VARCHAR(255) UNIQUE NOT NULL,
+    slug VARCHAR(255) UNIQUE,
     plan_tier VARCHAR(50) NOT NULL DEFAULT 'tier_starter', -- 'tier_free', 'tier_starter', 'tier_pro', 'tier_enterprise'
     subscription_status VARCHAR(50) NOT NULL DEFAULT 'active', -- 'trialing', 'active', 'past_due', 'canceled', 'suspended'
     billing_provider VARCHAR(50) DEFAULT 'manual', -- 'stripe', 'paddle', 'sslcommerz', 'bkash', 'manual'
@@ -26,6 +26,26 @@ CREATE TABLE IF NOT EXISTS organizations (
     created_at TIMESTAMPTZ NOT NULL DEFAULT NOW(),
     updated_at TIMESTAMPTZ NOT NULL DEFAULT NOW()
 );
+
+-- Defensive reconciliation for existing organizations
+ALTER TABLE organizations ADD COLUMN IF NOT EXISTS slug VARCHAR(255);
+ALTER TABLE organizations ADD COLUMN IF NOT EXISTS plan_tier VARCHAR(50) DEFAULT 'tier_starter';
+ALTER TABLE organizations ADD COLUMN IF NOT EXISTS subscription_status VARCHAR(50) DEFAULT 'active';
+ALTER TABLE organizations ADD COLUMN IF NOT EXISTS billing_provider VARCHAR(50) DEFAULT 'manual';
+ALTER TABLE organizations ADD COLUMN IF NOT EXISTS billing_customer_id VARCHAR(255);
+ALTER TABLE organizations ADD COLUMN IF NOT EXISTS subscription_id VARCHAR(255);
+ALTER TABLE organizations ADD COLUMN IF NOT EXISTS current_period_end TIMESTAMPTZ;
+ALTER TABLE organizations ADD COLUMN IF NOT EXISTS max_stores INT DEFAULT 1;
+ALTER TABLE organizations ADD COLUMN IF NOT EXISTS max_users INT DEFAULT 3;
+ALTER TABLE organizations ADD COLUMN IF NOT EXISTS max_products INT DEFAULT 1000;
+ALTER TABLE organizations ADD COLUMN IF NOT EXISTS updated_at TIMESTAMPTZ DEFAULT NOW();
+
+-- Safely backfill unique slug for any legacy rows missing a slug
+UPDATE organizations
+SET slug = lower(regexp_replace(COALESCE(name, 'org'), '[^a-zA-Z0-9]+', '-', 'g')) || '-' || substr(id::text, 1, 8)
+WHERE slug IS NULL;
+
+CREATE UNIQUE INDEX IF NOT EXISTS idx_organizations_slug ON organizations(slug);
 
 -- 3. Stores / Outlets (Physical or Operational Nodes)
 CREATE TABLE IF NOT EXISTS stores (

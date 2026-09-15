@@ -12,6 +12,12 @@ CREATE TABLE IF NOT EXISTS customers (
     updated_at TIMESTAMPTZ NOT NULL DEFAULT NOW()
 );
 
+-- Defensive reconciliation for existing customers table
+ALTER TABLE customers ADD COLUMN IF NOT EXISTS address TEXT;
+ALTER TABLE customers ADD COLUMN IF NOT EXISTS current_balance NUMERIC(12,2) DEFAULT 0.00;
+ALTER TABLE customers ADD COLUMN IF NOT EXISTS loyalty_points INT DEFAULT 0;
+ALTER TABLE customers ADD COLUMN IF NOT EXISTS updated_at TIMESTAMPTZ DEFAULT NOW();
+
 CREATE INDEX IF NOT EXISTS idx_customers_org_phone ON customers(organization_id, phone);
 
 -- 2. Customer Debt Payments Ledger

@@ -14,61 +14,51 @@
 
 | Area / Subsystem | Verification Method | Status | Notes |
 | :--- | :--- | :---: | :--- |
-| **Supabase CLI Authentication** | `npx supabase login` & `npx supabase link` | ✅ VERIFIED REMOTELY | Authenticated as `User@Masum-Billah` (Org: `sppwgyjvsnfdjoufvjpd`); linked to project `dhgfevlwiwcblobpxjca`. |
-| **Remote Database Inspection** | `npx supabase db query --linked` & `migration list` | ✅ VERIFIED REMOTELY | Non-destructive inspection completed: 0 migrations applied; 8 prototype tables detected with existing prototype test data. |
+| **Supabase CLI Authentication** | `npx supabase link --project-ref dhgfevlwiwcblobpxjca` | ⚠️ NOT VERIFIED / BLOCKED | CLI token belongs to a different organization account; access denied for `dhgfevlwiwcblobpxjca`. |
+| **Remote Database Inspection** | PostgREST / CLI inspection | ⚠️ NOT VERIFIED | Requires project access token / database password or connection string. |
 | **Declarative SQL Migrations (Files)** | Local DDL & Vitest verification | ✅ VERIFIED | 11 comprehensive SQL migration files in `supabase/migrations/` ready for non-destructive push. |
 | **TypeScript Database Models** | `npx tsc --noEmit` & `types/database.ts` | ✅ VERIFIED | 100% type coverage across 23 database entities and relations (0 compiler errors). |
 | **RLS Multi-Tenant Policies (Code/DDL)** | Declarative DDL (`20260915000009_rls_security_policies.sql`) | ✅ VERIFIED (CODE) | 100% RLS coverage defined on all 23 tables using `SECURITY DEFINER` helper functions. |
-| **RLS Multi-Tenant Isolation (Real DB)** | Live PostgreSQL Execution | ⏳ PENDING MIGRATION PUSH | 0 policies currently exist in remote DB. 6/6 tests passing in simulation. |
+| **RLS Multi-Tenant Isolation (Real DB)** | Live PostgreSQL Execution | ⚠️ NOT VERIFIED (REMOTE) | Simulation tests passed 6/6 (`tests/rls-isolation.test.ts`). Remote execution awaiting project link. |
 | **Atomic Checkout RPC (`create_sale_atomic`)** | Declarative DDL (`20260915000010_atomic_checkout_rpc.sql`) | ✅ VERIFIED (CODE) | Stored procedure with `SELECT FOR UPDATE` concurrency locks, double-entry ledger, and server-side pricing. |
-| **Atomic Checkout RPC (Real DB Execution)** | Live PostgreSQL Transaction Execution | ⏳ PENDING MIGRATION PUSH | 0 custom functions currently exist in remote DB. 10/10 tests passing in simulation. |
+| **Atomic Checkout RPC (Real DB Execution)** | Live PostgreSQL Transaction Execution | ⚠️ NOT VERIFIED (REMOTE) | Simulation tests passed 10/10 (`tests/atomic-checkout.test.ts`). Remote execution awaiting project link. |
 | **POS Financial Engine** | Unit tests (`tests/pos-engine.test.ts`) | ✅ VERIFIED | 10/10 math, discount, tax, split payment, and serial validation scenarios passing. |
 | **Vercel Production Deployment** | Live HTTP probe & Vercel CLI inspect | ✅ VERIFIED | Deployed deployment `dpl_Dn1KCLUykUxZsmp8grs1sDrKdfy3` is live and serving responsive UI. |
 | **Secrets & Security Scan** | AST & repository grep search | ✅ VERIFIED | 0 hardcoded secrets, 0 service-role keys exposed in client bundles. |
 
 ---
 
-## 2. Remote Database Inspection Results
+## 2. Remote Supabase Authentication & Linking Diagnostics
 
-### 2.1 Remote Migration History
-- **Command:** `npx supabase migration list`
-- **Result:**
-  * Remote migrations applied: **0**
-  * Pending local migrations: **11** (`20260915000001_core_tenancy_and_categories.sql` through `20260915000011_seed_master_categories.sql`)
+### 2.1 Attempted CLI Link Command
+```bash
+npx supabase link --project-ref dhgfevlwiwcblobpxjca
+```
 
-### 2.2 Existing Remote Tables & Row Counts
-A non-destructive query against `information_schema.tables` and `information_schema.columns` identified 8 legacy prototype tables:
-* `organizations`: 2 rows (columns: `id, name, status, license_type, created_at`)
-* `users`: 1 row (prototype user credentials)
-* `categories`: 0 rows
-* `customers`: 0 rows
-* `sales`: 13 rows (prototype sales records)
-* `sale_items`: 16 rows (prototype line items)
-* `products`: 5 rows (prototype products)
-* `settings`: 1 row (store branding configuration)
+### 2.2 Exact CLI Response
+```json
+{
+  "_tag": "Error",
+  "error": {
+    "code": "LegacyLinkProjectStatusError",
+    "message": "Unexpected error retrieving remote project status: {\"message\":\"Your account does not have the necessary privileges to access this endpoint. For more details, refer to our documentation https://supabase.com/docs/guides/platform/access-control\"}"
+  }
+}
+```
 
-### 2.3 Existing Remote Functions, RPCs & RLS Policies
-* **Custom Functions / RPCs:** **0** (Verified via `SELECT proname FROM pg_proc WHERE pronamespace = 'public'::regnamespace`)
-* **RLS Policies:** **0** (Verified via `SELECT * FROM pg_policies WHERE schemaname = 'public'`)
-* **RLS State:** Enabled on `organizations`, `categories`, `customers` without policies; disabled on `sales`, `sale_items`, `products`, `settings`, `users`.
+### 2.3 Root Cause Analysis
+1. The currently cached Supabase CLI session on the local system belongs to user account `itsmbillah` (Organization `jaulkdjlhyynwivkbfqi`, project `pcjjbishaajzogzkuruc` "reyononline").
+2. The target project `dhgfevlwiwcblobpxjca` is registered under a different Supabase organization or requires a dedicated Personal Access Token (PAT) with project administration permissions.
+3. No environment variables (`NEXT_PUBLIC_SUPABASE_URL`, `NEXT_PUBLIC_SUPABASE_ANON_KEY`, `SUPABASE_SERVICE_ROLE_KEY`) are currently configured in the Vercel project environment (`vercel env ls --project autopilot-pos-saas` returned empty).
+
+### 2.4 Action Required to Link Remote Supabase
+To apply the migrations to `dhgfevlwiwcblobpxjca`, provide either:
+* **Option A (Supabase CLI Token):** A Personal Access Token from the Supabase account that owns `dhgfevlwiwcblobpxjca` (`npx supabase login --token <PAT>`), followed by `npx supabase link --project-ref dhgfevlwiwcblobpxjca`.
+* **Option B (Direct Connection String):** The Postgres connection string (`npx supabase db push --db-url "postgresql://postgres.[ref]:[password]@..."`).
 
 ---
 
-## 3. Migration Safety & Conflict Assessment
-
-### 3.1 Overlapping Prototype Tables vs Phase 1 Schema
-1. **New Tables (15 Tables):** `stores`, `shop_categories`, `store_modules`, `category_attribute_configs`, `user_profiles`, `organization_members`, `store_members`, `master_categories`, `master_products`, `store_products`, `product_variants`, `product_serials`, `product_batches`, `stock_movements`, `customer_payments`, `suppliers`, `payments`, `expense_categories`, `expenses`, `register_shifts`. These will be created cleanly without any conflict.
-2. **Overlapping Existing Tables (4 Tables):**
-   * `organizations`: Phase 1 requires additional columns (`slug, legal_name, country_code, currency, timezone, tax_number, phone, email, address, metadata, updated_at`).
-   * `customers`: Phase 1 requires additional columns (`code, store_id, credit_limit, total_due, address, status, metadata, updated_at`).
-   * `sales`: Phase 1 requires additional columns (`store_id, status, subtotal_amount, discount_amount, tax_amount, total_amount, paid_amount, due_amount, tax_mode, notes, metadata, updated_at`).
-   * `sale_items`: Phase 1 requires additional columns (`store_product_id, variant_id, batch_id, unit_price, cost_price, discount_amount, tax_amount, total_price, serial_numbers, metadata`).
-
-### 3.2 Non-Destructive Safe Migration Strategy
-To prevent `CREATE TABLE IF NOT EXISTS` from silently skipping required columns on existing prototype tables, migration files should include defensive `ALTER TABLE ... ADD COLUMN IF NOT EXISTS` statements so that:
-1. Zero existing prototype data is lost.
-2. All new enterprise multi-tenant columns, indexes, foreign keys, and RLS policies attach cleanly.
-3. `supabase db push` will execute smoothly and non-destructively.
+## 3. Pre-Migration Safety & DDL Assessment
 
 All 11 migrations in `supabase/migrations/` have been written to guarantee non-destructive execution:
 * Every table creation uses `CREATE TABLE IF NOT EXISTS`.
