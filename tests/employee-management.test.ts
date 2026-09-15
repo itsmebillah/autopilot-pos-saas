@@ -182,4 +182,108 @@ describe("Shop Owner & Employee Management RBAC Suite", () => {
       expect(hasPermission(role, "canViewFinancialReports")).toBe(true);
     });
   });
+
+  describe("9. Store Context Resolution & Employee Creation Security", () => {
+    function resolveEmployeeCreationStore(
+      session: AuthenticatedSession,
+      payload: { fullName: string; email: string; role: string; storeId?: string }
+    ) {
+      const targetStoreId = payload.storeId || session.store?.id || session.accessibleStores?.[0]?.id;
+
+      if (!payload.fullName || !payload.email || !payload.role || !targetStoreId) {
+        throw new Error("Full Name, Email, Role, and Store are required");
+      }
+
+      if (!session.profile.isSuperAdmin) {
+        const isAuthorized = session.storeIds.includes(targetStoreId);
+        if (!isAuthorized) {
+          throw new Error("Forbidden — Target store access is denied");
+        }
+      }
+
+      return {
+        assignedStoreId: targetStoreId,
+        organizationId: session.organization.id,
+      };
+    }
+
+    it("allows single-store Shop Owner to create employee without explicitly passing storeId", () => {
+      const result = resolveEmployeeCreationStore(reyonOwnerSession, {
+        fullName: "New Cashier",
+        email: "newcashier@reyonwatch.com",
+        role: "cashier",
+      });
+
+      expect(result.assignedStoreId).toBe(storeReyonWatch.id);
+      expect(result.organizationId).toBe("org-reyon-watch");
+    });
+
+    it("correctly binds employee to Reyon Watch main store when storeId is automatically resolved", () => {
+      const result = resolveEmployeeCreationStore(reyonOwnerSession, {
+        fullName: "Second Staff",
+        email: "staff2@reyonwatch.com",
+        role: "inventory",
+        storeId: "", // Empty storeId in payload
+      });
+
+      expect(result.assignedStoreId).toBe("store-reyon-01");
+    });
+
+    it("blocks Shop Owner from passing an unauthorized storeId (competitor store)", () => {
+      expect(() =>
+        resolveEmployeeCreationStore(reyonOwnerSession, {
+          fullName: "Attacker Staff",
+          email: "attacker@fake.com",
+          role: "cashier",
+          storeId: storeCompetitor.id, // Unauthorized storeId!
+        })
+      ).toThrowError(/Forbidden — Target store access is denied/);
+    });
+
+    it("allows Multi-Store Shop Owner to assign employee to any authorized store in their org", () => {
+      const storeReyonBranch2 = { id: "store-reyon-02", name: "Reyon Watch - Dhanmondi", code: "REYON-02" };
+      const multiStoreOwnerSession: AuthenticatedSession = {
+        ...reyonOwnerSession,
+        accessibleStores: [storeReyonWatch, storeReyonBranch2],
+        storeIds: [storeReyonWatch.id, storeReyonBranch2.id],
+      };
+
+      const result1 = resolveEmployeeCreationStore(multiStoreOwnerSession, {
+        fullName: "Branch 1 Staff",
+        email: "staff1@reyon.com",
+        role: "cashier",
+        storeId: storeReyonWatch.id,
+      });
+      expect(result1.assignedStoreId).toBe(storeReyonWatch.id);
+
+      const result2 = resolveEmployeeCreationStore(multiStoreOwnerSession, {
+        fullName: "Branch 2 Staff",
+        email: "staff2@reyon.com",
+        role: "cashier",
+        storeId: storeReyonBranch2.id,
+      });
+      expect(result2.assignedStoreId).toBe(storeReyonBranch2.id);
+    });
+
+    it("allows Master Admin (super admin) to assign employees to target store context", () => {
+      const masterAdminSession: AuthenticatedSession = {
+        user: { id: "user-master-001", email: "williammasum@gmail.com" },
+        profile: { fullName: "William Masum", isSuperAdmin: true },
+        organization: { id: "org-platform", name: "Autopilot SaaS" },
+        store: storeReyonWatch,
+        accessibleStores: [storeReyonWatch],
+        role: "owner",
+        storeIds: [storeReyonWatch.id],
+      };
+
+      const result = resolveEmployeeCreationStore(masterAdminSession, {
+        fullName: "Platform Managed Staff",
+        email: "managed@reyonwatch.com",
+        role: "manager",
+        storeId: storeReyonWatch.id,
+      });
+
+      expect(result.assignedStoreId).toBe(storeReyonWatch.id);
+    });
+  });
 });

@@ -105,6 +105,16 @@ export default function EmployeesPage() {
   // Password Reset Feedback
   const [recoveryLink, setRecoveryLink] = useState<{ email: string; link: string } | null>(null);
 
+  // Compute available stores contextually
+  const availableStores: StoreOption[] =
+    stores.length > 0
+      ? stores
+      : user?.accessibleStores && user.accessibleStores.length > 0
+      ? user.accessibleStores
+      : user?.activeStore
+      ? [user.activeStore]
+      : [];
+
   const fetchEmployees = useCallback(async () => {
     try {
       setIsLoading(true);
@@ -113,10 +123,8 @@ export default function EmployeesPage() {
         const data = await res.json();
         if (data.success) {
           setEmployees(data.employees || []);
-          setStores(data.stores || []);
-          if (data.stores?.length > 0 && !newEmployee.storeId) {
-            setNewEmployee((prev) => ({ ...prev, storeId: data.stores[0].id }));
-          }
+          const fetchedStores = data.stores || [];
+          setStores(fetchedStores);
         }
       }
     } catch (err) {
@@ -124,7 +132,7 @@ export default function EmployeesPage() {
     } finally {
       setIsLoading(false);
     }
-  }, [newEmployee.storeId]);
+  }, []);
 
   useEffect(() => {
     fetchEmployees();
@@ -136,11 +144,16 @@ export default function EmployeesPage() {
     setFormError(null);
     setIsSubmitting(true);
 
+    const payload = {
+      ...newEmployee,
+      storeId: newEmployee.storeId || availableStores[0]?.id || user?.activeStore?.id || "",
+    };
+
     try {
       const res = await fetch("/api/employees", {
         method: "POST",
         headers: { "Content-Type": "application/json" },
-        body: JSON.stringify(newEmployee),
+        body: JSON.stringify(payload),
       });
 
       const data = await res.json();
@@ -153,7 +166,7 @@ export default function EmployeesPage() {
         fullName: "",
         email: "",
         role: "cashier",
-        storeId: stores[0]?.id || "",
+        storeId: availableStores[0]?.id || "",
         phone: "",
       });
       await fetchEmployees();
@@ -173,11 +186,16 @@ export default function EmployeesPage() {
     setFormError(null);
     setIsSubmitting(true);
 
+    const payload = {
+      ...editFormData,
+      storeId: editFormData.storeId || availableStores[0]?.id || user?.activeStore?.id || "",
+    };
+
     try {
       const res = await fetch(`/api/employees/${editingEmployee.id}`, {
         method: "PATCH",
         headers: { "Content-Type": "application/json" },
-        body: JSON.stringify(editFormData),
+        body: JSON.stringify(payload),
       });
 
       const data = await res.json();
@@ -269,7 +287,7 @@ export default function EmployeesPage() {
               </h1>
               <span className="inline-flex items-center gap-1 px-2.5 py-0.5 rounded-full text-[10px] font-bold uppercase bg-green-500/10 text-green-700 dark:text-green-400 border border-green-500/20 max-w-[160px] truncate">
                 <Store size={11} className="shrink-0" />
-                <span className="truncate">{user?.activeStore?.name || user?.organizationName || "REYON WATCH"}</span>
+                <span className="truncate">{user?.activeStore?.name || user?.organizationName || "Reyon Watch"}</span>
               </span>
             </div>
             <p className="text-xs sm:text-sm text-slate-500 dark:text-gray-400 mt-0.5">
@@ -290,6 +308,14 @@ export default function EmployeesPage() {
               <button
                 onClick={() => {
                   setFormError(null);
+                  const initialStoreId = availableStores[0]?.id || user?.activeStore?.id || "";
+                  setNewEmployee({
+                    fullName: "",
+                    email: "",
+                    role: "cashier",
+                    storeId: initialStoreId,
+                    phone: "",
+                  });
                   setIsAddOpen(true);
                 }}
                 className="flex items-center gap-1.5 px-3.5 sm:px-4 py-2 sm:py-2.5 rounded-xl bg-gradient-to-r from-green-600 to-emerald-600 hover:from-green-500 hover:to-emerald-500 text-white text-xs sm:text-sm font-bold shadow-md shadow-green-600/20 transition-all active:scale-95 cursor-pointer"
@@ -523,7 +549,7 @@ export default function EmployeesPage() {
                               fullName: emp.fullName,
                               phone: emp.phone || "",
                               role: emp.role,
-                              storeId: emp.primaryStore?.id || stores[0]?.id || "",
+                              storeId: emp.primaryStore?.id || availableStores[0]?.id || "",
                               isActive: emp.isActive,
                             });
                             setIsEditOpen(true);
@@ -655,7 +681,7 @@ export default function EmployeesPage() {
                                       fullName: emp.fullName,
                                       phone: emp.phone || "",
                                       role: emp.role,
-                                      storeId: emp.primaryStore?.id || stores[0]?.id || "",
+                                      storeId: emp.primaryStore?.id || availableStores[0]?.id || "",
                                       isActive: emp.isActive,
                                     });
                                     setIsEditOpen(true);
@@ -703,7 +729,7 @@ export default function EmployeesPage() {
         {/* ADD EMPLOYEE MODAL */}
         {isAddOpen && (
           <div className="fixed inset-0 z-50 flex items-center justify-center p-3 sm:p-4 bg-black/70 backdrop-blur-sm overflow-y-auto">
-            <div className="bg-white dark:bg-slate-900 rounded-3xl border border-slate-200 dark:border-slate-800 w-full max-w-lg overflow-hidden shadow-2xl max-h-[90vh] flex flex-col">
+            <div className="bg-white dark:bg-slate-900 rounded-3xl border border-slate-200 dark:border-slate-800 w-full max-w-lg overflow-hidden shadow-2xl max-h-[90vh] flex flex-col my-auto">
               <div className="px-5 py-4 border-b border-slate-200 dark:border-slate-800 flex items-center justify-between bg-slate-50/50 dark:bg-slate-800/30 shrink-0">
                 <div className="flex items-center gap-2">
                   <UserPlus size={18} className="text-green-600 dark:text-green-400" />
@@ -712,6 +738,7 @@ export default function EmployeesPage() {
                   </h3>
                 </div>
                 <button
+                  type="button"
                   onClick={() => setIsAddOpen(false)}
                   className="text-slate-400 hover:text-slate-600 dark:hover:text-slate-200 p-1.5 rounded-lg cursor-pointer"
                 >
@@ -736,7 +763,7 @@ export default function EmployeesPage() {
                     placeholder="e.g. John Doe"
                     value={newEmployee.fullName}
                     onChange={(e) => setNewEmployee({ ...newEmployee, fullName: e.target.value })}
-                    className="w-full px-3.5 py-2 text-xs font-semibold bg-slate-50 dark:bg-slate-800 text-slate-900 dark:text-white rounded-xl border border-slate-200 dark:border-slate-700 focus:outline-none focus:ring-2 focus:ring-green-500"
+                    className="w-full px-3.5 py-2.5 text-xs font-semibold bg-slate-50 dark:bg-slate-800 text-slate-900 dark:text-white rounded-xl border border-slate-200 dark:border-slate-700 focus:outline-none focus:ring-2 focus:ring-green-500"
                   />
                 </div>
 
@@ -750,7 +777,7 @@ export default function EmployeesPage() {
                     placeholder="john@store.com"
                     value={newEmployee.email}
                     onChange={(e) => setNewEmployee({ ...newEmployee, email: e.target.value })}
-                    className="w-full px-3.5 py-2 text-xs font-semibold bg-slate-50 dark:bg-slate-800 text-slate-900 dark:text-white rounded-xl border border-slate-200 dark:border-slate-700 focus:outline-none focus:ring-2 focus:ring-green-500"
+                    className="w-full px-3.5 py-2.5 text-xs font-semibold bg-slate-50 dark:bg-slate-800 text-slate-900 dark:text-white rounded-xl border border-slate-200 dark:border-slate-700 focus:outline-none focus:ring-2 focus:ring-green-500"
                   />
                 </div>
 
@@ -763,7 +790,7 @@ export default function EmployeesPage() {
                     placeholder="+880 1700-000000"
                     value={newEmployee.phone}
                     onChange={(e) => setNewEmployee({ ...newEmployee, phone: e.target.value })}
-                    className="w-full px-3.5 py-2 text-xs font-semibold bg-slate-50 dark:bg-slate-800 text-slate-900 dark:text-white rounded-xl border border-slate-200 dark:border-slate-700 focus:outline-none focus:ring-2 focus:ring-green-500"
+                    className="w-full px-3.5 py-2.5 text-xs font-semibold bg-slate-50 dark:bg-slate-800 text-slate-900 dark:text-white rounded-xl border border-slate-200 dark:border-slate-700 focus:outline-none focus:ring-2 focus:ring-green-500"
                   />
                 </div>
 
@@ -774,7 +801,7 @@ export default function EmployeesPage() {
                   <select
                     value={newEmployee.role}
                     onChange={(e) => setNewEmployee({ ...newEmployee, role: e.target.value })}
-                    className="w-full px-3.5 py-2 text-xs font-semibold bg-slate-50 dark:bg-slate-800 text-slate-900 dark:text-white rounded-xl border border-slate-200 dark:border-slate-700 focus:outline-none focus:ring-2 focus:ring-green-500"
+                    className="w-full px-3.5 py-2.5 text-xs font-semibold bg-slate-50 dark:bg-slate-800 text-slate-900 dark:text-white rounded-xl border border-slate-200 dark:border-slate-700 focus:outline-none focus:ring-2 focus:ring-green-500"
                   >
                     <option value="cashier">Sales Person / Cashier (POS, Sales, Invoices)</option>
                     <option value="manager">Store Manager (POS, Inventory, Products, Reports)</option>
@@ -787,17 +814,29 @@ export default function EmployeesPage() {
                   </p>
                 </div>
 
-                {stores.length > 0 && (
+                {/* Store / Outlet Selection Section */}
+                {availableStores.length <= 1 ? (
+                  <div>
+                    <label className="block text-xs font-bold text-slate-700 dark:text-slate-300 mb-1">
+                      Assigned Store Outlet
+                    </label>
+                    <div className="flex items-center gap-2 px-3.5 py-2.5 rounded-xl bg-slate-100 dark:bg-slate-800/80 border border-slate-200 dark:border-slate-700 text-xs font-semibold text-slate-800 dark:text-slate-200">
+                      <Store size={14} className="text-green-600 dark:text-green-400 shrink-0" />
+                      <span className="truncate">{availableStores[0]?.name || user?.activeStore?.name || "Reyon Watch - Main Branch"}</span>
+                      <span className="ml-auto text-[10px] text-slate-500 font-normal shrink-0">(Automatically assigned)</span>
+                    </div>
+                  </div>
+                ) : (
                   <div>
                     <label className="block text-xs font-bold text-slate-700 dark:text-slate-300 mb-1">
                       Assigned Store Outlet *
                     </label>
                     <select
-                      value={newEmployee.storeId}
+                      value={newEmployee.storeId || availableStores[0]?.id}
                       onChange={(e) => setNewEmployee({ ...newEmployee, storeId: e.target.value })}
-                      className="w-full px-3.5 py-2 text-xs font-semibold bg-slate-50 dark:bg-slate-800 text-slate-900 dark:text-white rounded-xl border border-slate-200 dark:border-slate-700 focus:outline-none focus:ring-2 focus:ring-green-500"
+                      className="w-full px-3.5 py-2.5 text-xs font-semibold bg-slate-50 dark:bg-slate-800 text-slate-900 dark:text-white rounded-xl border border-slate-200 dark:border-slate-700 focus:outline-none focus:ring-2 focus:ring-green-500"
                     >
-                      {stores.map((s) => (
+                      {availableStores.map((s) => (
                         <option key={s.id} value={s.id}>
                           {s.name} {s.code ? `(${s.code})` : ""}
                         </option>
@@ -806,7 +845,7 @@ export default function EmployeesPage() {
                   </div>
                 )}
 
-                <div className="pt-2 flex items-center justify-end gap-2.5">
+                <div className="pt-2 flex items-center justify-end gap-2.5 shrink-0">
                   <button
                     type="button"
                     onClick={() => setIsAddOpen(false)}
@@ -830,15 +869,16 @@ export default function EmployeesPage() {
         {/* EDIT EMPLOYEE MODAL */}
         {isEditOpen && editingEmployee && (
           <div className="fixed inset-0 z-50 flex items-center justify-center p-3 sm:p-4 bg-black/70 backdrop-blur-sm overflow-y-auto">
-            <div className="bg-white dark:bg-slate-900 rounded-3xl border border-slate-200 dark:border-slate-800 w-full max-w-lg overflow-hidden shadow-2xl max-h-[90vh] flex flex-col">
+            <div className="bg-white dark:bg-slate-900 rounded-3xl border border-slate-200 dark:border-slate-800 w-full max-w-lg overflow-hidden shadow-2xl max-h-[90vh] flex flex-col my-auto">
               <div className="px-5 py-4 border-b border-slate-200 dark:border-slate-800 flex items-center justify-between bg-slate-50/50 dark:bg-slate-800/30 shrink-0">
                 <div className="flex items-center gap-2">
                   <Edit2 size={18} className="text-indigo-600 dark:text-indigo-400" />
-                  <h3 className="text-base font-extrabold text-slate-900 dark:text-white">
+                  <h3 className="text-base font-extrabold text-slate-900 dark:text-white truncate">
                     Edit Employee: {editingEmployee.fullName}
                   </h3>
                 </div>
                 <button
+                  type="button"
                   onClick={() => setIsEditOpen(false)}
                   className="text-slate-400 hover:text-slate-600 dark:hover:text-slate-200 p-1.5 rounded-lg cursor-pointer"
                 >
@@ -862,7 +902,7 @@ export default function EmployeesPage() {
                     required
                     value={editFormData.fullName}
                     onChange={(e) => setEditFormData({ ...editFormData, fullName: e.target.value })}
-                    className="w-full px-3.5 py-2 text-xs font-semibold bg-slate-50 dark:bg-slate-800 text-slate-900 dark:text-white rounded-xl border border-slate-200 dark:border-slate-700 focus:outline-none focus:ring-2 focus:ring-green-500"
+                    className="w-full px-3.5 py-2.5 text-xs font-semibold bg-slate-50 dark:bg-slate-800 text-slate-900 dark:text-white rounded-xl border border-slate-200 dark:border-slate-700 focus:outline-none focus:ring-2 focus:ring-green-500"
                   />
                 </div>
 
@@ -874,7 +914,7 @@ export default function EmployeesPage() {
                     type="tel"
                     value={editFormData.phone}
                     onChange={(e) => setEditFormData({ ...editFormData, phone: e.target.value })}
-                    className="w-full px-3.5 py-2 text-xs font-semibold bg-slate-50 dark:bg-slate-800 text-slate-900 dark:text-white rounded-xl border border-slate-200 dark:border-slate-700 focus:outline-none focus:ring-2 focus:ring-green-500"
+                    className="w-full px-3.5 py-2.5 text-xs font-semibold bg-slate-50 dark:bg-slate-800 text-slate-900 dark:text-white rounded-xl border border-slate-200 dark:border-slate-700 focus:outline-none focus:ring-2 focus:ring-green-500"
                   />
                 </div>
 
@@ -885,7 +925,7 @@ export default function EmployeesPage() {
                   <select
                     value={editFormData.role}
                     onChange={(e) => setEditFormData({ ...editFormData, role: e.target.value })}
-                    className="w-full px-3.5 py-2 text-xs font-semibold bg-slate-50 dark:bg-slate-800 text-slate-900 dark:text-white rounded-xl border border-slate-200 dark:border-slate-700 focus:outline-none focus:ring-2 focus:ring-green-500"
+                    className="w-full px-3.5 py-2.5 text-xs font-semibold bg-slate-50 dark:bg-slate-800 text-slate-900 dark:text-white rounded-xl border border-slate-200 dark:border-slate-700 focus:outline-none focus:ring-2 focus:ring-green-500"
                   >
                     <option value="cashier">Sales Person / Cashier (POS, Sales, Invoices)</option>
                     <option value="manager">Store Manager (POS, Inventory, Products, Reports)</option>
@@ -895,17 +935,28 @@ export default function EmployeesPage() {
                   </select>
                 </div>
 
-                {stores.length > 0 && (
+                {availableStores.length <= 1 ? (
+                  <div>
+                    <label className="block text-xs font-bold text-slate-700 dark:text-slate-300 mb-1">
+                      Assigned Store Outlet
+                    </label>
+                    <div className="flex items-center gap-2 px-3.5 py-2.5 rounded-xl bg-slate-100 dark:bg-slate-800/80 border border-slate-200 dark:border-slate-700 text-xs font-semibold text-slate-800 dark:text-slate-200">
+                      <Store size={14} className="text-green-600 dark:text-green-400 shrink-0" />
+                      <span className="truncate">{availableStores[0]?.name || user?.activeStore?.name || "Reyon Watch - Main Branch"}</span>
+                      <span className="ml-auto text-[10px] text-slate-500 font-normal shrink-0">(Automatically assigned)</span>
+                    </div>
+                  </div>
+                ) : (
                   <div>
                     <label className="block text-xs font-bold text-slate-700 dark:text-slate-300 mb-1">
                       Assigned Store Outlet *
                     </label>
                     <select
-                      value={editFormData.storeId}
+                      value={editFormData.storeId || availableStores[0]?.id}
                       onChange={(e) => setEditFormData({ ...editFormData, storeId: e.target.value })}
-                      className="w-full px-3.5 py-2 text-xs font-semibold bg-slate-50 dark:bg-slate-800 text-slate-900 dark:text-white rounded-xl border border-slate-200 dark:border-slate-700 focus:outline-none focus:ring-2 focus:ring-green-500"
+                      className="w-full px-3.5 py-2.5 text-xs font-semibold bg-slate-50 dark:bg-slate-800 text-slate-900 dark:text-white rounded-xl border border-slate-200 dark:border-slate-700 focus:outline-none focus:ring-2 focus:ring-green-500"
                     >
-                      {stores.map((s) => (
+                      {availableStores.map((s) => (
                         <option key={s.id} value={s.id}>
                           {s.name} {s.code ? `(${s.code})` : ""}
                         </option>
@@ -927,7 +978,7 @@ export default function EmployeesPage() {
                   </label>
                 </div>
 
-                <div className="pt-2 flex items-center justify-end gap-2.5">
+                <div className="pt-2 flex items-center justify-end gap-2.5 shrink-0">
                   <button
                     type="button"
                     onClick={() => setIsEditOpen(false)}

@@ -98,8 +98,11 @@ export async function POST(req: Request) {
     const session = await requireShopAuth();
     requireRole(session, ["owner", "manager"]);
 
-    const body = await req.json();
-    const { fullName, email, role, storeId, phone } = body;
+    const body = await req.json().catch(() => ({}));
+    const { fullName, email, role, storeId: clientStoreId, phone } = body;
+
+    // Resolve target store ID: use client-supplied storeId or fall back to authenticated session store
+    const storeId = clientStoreId || session.store?.id || session.accessibleStores?.[0]?.id;
 
     if (!fullName || !email || !role || !storeId) {
       return NextResponse.json(
@@ -117,21 +120,42 @@ export async function POST(req: Request) {
     }
 
     const adminClient = getServerSupabaseAdmin();
-    const orgId = session.organization.id;
+    let targetOrgId = session.organization.id;
 
-    // Security Check: Verify target store belongs to the current user's organization
+    // Security Check: For non-super-admin users, target store MUST be one of their authorized stores
+    if (!session.profile.isSuperAdmin) {
+      const isAuthorizedStore = session.storeIds.includes(storeId);
+      if (!isAuthorizedStore) {
+        return NextResponse.json(
+          { success: false, message: "Forbidden — Target store access is denied" },
+          { status: 403 }
+        );
+      }
+    }
+
+    // Verify target store exists and retrieve organization
     const { data: validStore, error: storeCheckErr } = await adminClient
       .from("stores")
-      .select("id, name")
+      .select("id, name, organization_id")
       .eq("id", storeId)
-      .eq("organization_id", orgId)
       .single();
 
     if (storeCheckErr || !validStore) {
       return NextResponse.json(
+        { success: false, message: "Forbidden — Target store not found or invalid" },
+        { status: 403 }
+      );
+    }
+
+    if (!session.profile.isSuperAdmin && validStore.organization_id !== targetOrgId) {
+      return NextResponse.json(
         { success: false, message: "Forbidden — Target store does not belong to your organization" },
         { status: 403 }
       );
+    }
+
+    if (session.profile.isSuperAdmin) {
+      targetOrgId = validStore.organization_id;
     }
 
     // 1. Create or resolve Auth user in Supabase Auth
@@ -172,7 +196,7 @@ export async function POST(req: Request) {
       .from("organization_members")
       .upsert(
         {
-          organization_id: orgId,
+          organization_id: targetOrgId,
           user_id: employeeUserId,
           role: role.toLowerCase(),
           is_active: true,

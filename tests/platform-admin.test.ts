@@ -61,7 +61,36 @@ describe("Platform Admin & Shop Onboarding Suite", () => {
     });
   });
 
-  describe("2. Shop Onboarding & Taxonomy Preset Generator", () => {
+  describe("2. Platform Admin User & Shop Admin Password Reset API Guard", () => {
+    function simulateAdminPasswordReset(session: AuthenticatedSession, targetUserId: string, newPassword?: string) {
+      requireSuperAdmin(session);
+      if (!targetUserId) throw new Error("Missing required parameter: userId");
+      if (!newPassword || newPassword.length < 6) {
+        throw new Error("Password must be at least 6 characters long.");
+      }
+      return { success: true, targetUserId, updated: true };
+    }
+
+    it("allows Platform Super Admin to reset password for any shop admin or user", () => {
+      const result = simulateAdminPasswordReset(masterAdminSession, "user-owner-101", "NewSecurePass123!");
+      expect(result.success).toBe(true);
+      expect(result.targetUserId).toBe("user-owner-101");
+    });
+
+    it("denies non-super-admin from resetting passwords", () => {
+      expect(() =>
+        simulateAdminPasswordReset(shopOwnerSession, "user-cashier-102", "NewSecurePass123!")
+      ).toThrowError(/Forbidden — Platform Super Admin privileges required/);
+    });
+
+    it("rejects passwords shorter than 6 characters", () => {
+      expect(() =>
+        simulateAdminPasswordReset(masterAdminSession, "user-owner-101", "123")
+      ).toThrowError(/Password must be at least 6 characters long./);
+    });
+  });
+
+  describe("3. Shop Onboarding & Taxonomy Preset Generator", () => {
     interface ShopCategoryPreset {
       key: string;
       name: string;
@@ -174,7 +203,7 @@ describe("Platform Admin & Shop Onboarding Suite", () => {
     });
   });
 
-  describe("3. Multi-Store Outlets & Shop Status Lifecycle", () => {
+  describe("4. Multi-Store Outlets & Shop Status Lifecycle", () => {
     it("allows creating additional store outlets under the same organization", () => {
       const orgId = "org-apex-001";
       const branch1 = { id: "store-dhaka", organization_id: orgId, name: "Dhaka Branch", is_active: true };
