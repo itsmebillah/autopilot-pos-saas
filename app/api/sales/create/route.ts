@@ -109,10 +109,19 @@ export async function POST(req: Request) {
       console.warn("Payments insertion warning:", paymentsError);
     }
 
-    // 4. Update Stock & Log Stock Movements Ledger
+    // 4. Update Stock & Log Stock Movements Ledger (Server-authoritative)
     for (const item of cart) {
-      const currentStock = Number(item.stock || 0);
-      const newStock = Math.max(0, currentStock - Number(item.quantity));
+      if (!item.id) continue;
+
+      const { data: dbProduct } = await supabase
+        .from("products")
+        .select("stock")
+        .eq("id", item.id)
+        .single();
+
+      const currentStock = dbProduct ? Number(dbProduct.stock) : Number(item.stock || 0);
+      const qtyDeducted = Number(item.quantity) || 1;
+      const newStock = Math.max(0, currentStock - qtyDeducted);
 
       // Update product stock
       await supabase
@@ -125,7 +134,7 @@ export async function POST(req: Request) {
         await supabase.from("stock_movements").insert([
           {
             movement_type: "SALE",
-            quantity: -Number(item.quantity),
+            quantity: -qtyDeducted,
             previous_stock: currentStock,
             new_stock: newStock,
             reference_id: saleData.id,
@@ -134,7 +143,7 @@ export async function POST(req: Request) {
           },
         ]);
       } catch {
-        // Stock movement logging error non-blocking for standalone tables
+        // Stock movement logging error non-blocking
       }
     }
 
