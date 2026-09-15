@@ -169,22 +169,22 @@ export default function SalesPage() {
   }
 
   return (
-    <div className="min-h-screen bg-black text-white flex flex-col lg:flex-row">
+    <div className="min-h-screen bg-slate-50 dark:bg-black text-slate-900 dark:text-white flex flex-col lg:flex-row transition-colors">
       <Sidebar />
 
       <main className="flex-1 w-full max-w-7xl mx-auto p-3 sm:p-5 lg:p-8 flex flex-col min-h-0">
         {/* Top Title Bar */}
-        <div className="flex items-center justify-between gap-3 mb-4 sm:mb-6 pb-3 border-b border-white/10">
+        <div className="flex items-center justify-between gap-3 mb-4 sm:mb-6 pb-3 border-b border-slate-200 dark:border-white/10">
           <div>
-            <h1 className="text-2xl sm:text-3xl font-bold tracking-tight">Sales POS</h1>
-            <p className="text-xs sm:text-sm text-gray-400">Point of Sale Register & Invoice Checkout</p>
+            <h1 className="text-2xl sm:text-3xl font-bold tracking-tight text-slate-900 dark:text-white">Sales POS</h1>
+            <p className="text-xs sm:text-sm text-slate-500 dark:text-gray-400">Point of Sale Register & Invoice Checkout</p>
           </div>
 
           {/* Cart summary badge on mobile */}
           <button
             type="button"
             onClick={() => setMobileCartOpen(!mobileCartOpen)}
-            className="lg:hidden flex items-center gap-2 bg-green-500 text-black px-3.5 py-2 rounded-xl text-sm font-semibold shadow-lg active:scale-95 transition-transform"
+            className="lg:hidden flex items-center gap-2 bg-green-600 dark:bg-green-500 text-white dark:text-black px-3.5 py-2 rounded-xl text-sm font-semibold shadow-md active:scale-95 transition-transform"
           >
             <ShoppingCart size={18} />
             <span>{totalItemsCount}</span>
@@ -196,20 +196,20 @@ export default function SalesPage() {
         <div className="space-y-3 mb-5">
           <div className="flex items-center gap-2">
             <div className="relative flex-1">
-              <Search className="absolute left-3.5 top-1/2 -translate-y-1/2 text-gray-400 w-4 h-4" />
+              <Search className="absolute left-3.5 top-1/2 -translate-y-1/2 text-slate-400 dark:text-gray-400 w-4 h-4" />
               <input
                 type="text"
                 placeholder="Search by product name, SKU, or scan barcode..."
                 value={search}
                 onChange={(e) => setSearch(e.target.value)}
-                className="w-full pl-10 pr-4 py-2.5 sm:py-3 rounded-xl bg-white/5 border border-white/10 text-white placeholder-gray-500 text-sm focus:outline-none focus:border-green-500 transition-colors"
+                className="w-full pl-10 pr-4 py-2.5 sm:py-3 rounded-xl bg-white dark:bg-white/5 border border-slate-200 dark:border-white/10 text-slate-900 dark:text-white placeholder-slate-400 dark:placeholder-gray-500 text-sm focus:outline-none focus:border-green-500 shadow-sm transition-colors"
               />
             </div>
 
             <button
               type="button"
               onClick={() => setIsCameraScannerOpen(true)}
-              className="flex items-center gap-2 bg-green-500 text-black hover:bg-green-400 px-3.5 sm:px-4 py-2.5 sm:py-3 rounded-xl text-xs sm:text-sm font-bold shadow-lg shadow-green-500/20 active:scale-95 transition-all shrink-0"
+              className="flex items-center gap-2 bg-green-600 hover:bg-green-500 text-white dark:bg-green-500 dark:text-black dark:hover:bg-green-400 px-3.5 sm:px-4 py-2.5 sm:py-3 rounded-xl text-xs sm:text-sm font-bold shadow-md shadow-green-600/20 active:scale-95 transition-all shrink-0"
               title="Scan Barcode with Camera"
             >
               <Camera size={18} />
@@ -219,7 +219,7 @@ export default function SalesPage() {
 
           {/* Scanned Feedback Pill */}
           {lastScannedFeedback && (
-            <div className="bg-green-500/20 border border-green-500/40 text-green-400 text-xs px-3.5 py-2 rounded-xl font-medium flex items-center gap-2 animate-in fade-in">
+            <div className="bg-green-500/15 border border-green-500/30 text-green-700 dark:text-green-400 text-xs px-3.5 py-2 rounded-xl font-medium flex items-center gap-2 animate-in fade-in">
               <Barcode size={16} />
               <span>{lastScannedFeedback}</span>
             </div>
@@ -234,8 +234,8 @@ export default function SalesPage() {
                 onClick={() => setSelectedCategory(cat)}
                 className={`px-3 sm:px-4 py-1.5 rounded-xl text-xs font-semibold whitespace-nowrap transition-all ${
                   selectedCategory === cat
-                    ? "bg-white text-black shadow-md"
-                    : "bg-white/5 text-gray-400 hover:text-white hover:bg-white/10"
+                    ? "bg-slate-900 text-white shadow-sm dark:bg-white dark:text-black"
+                    : "bg-slate-200 dark:bg-white/5 text-slate-700 dark:text-gray-400 hover:text-slate-900 dark:hover:text-white hover:bg-slate-300 dark:hover:bg-white/10"
                 }`}
               >
                 {cat}
@@ -249,7 +249,7 @@ export default function SalesPage() {
           {/* Left: Product Catalog Grid (7 Cols on desktop) */}
           <div className="lg:col-span-7 xl:col-span-8 flex flex-col min-h-0">
             {filteredProducts.length === 0 ? (
-              <div className="bg-white/5 border border-white/10 rounded-2xl p-10 text-center text-gray-400">
+              <div className="bg-white dark:bg-white/5 border border-slate-200 dark:border-white/10 rounded-2xl p-10 text-center text-slate-500 dark:text-gray-400 shadow-sm">
                 <p className="text-sm">No products found matching your search.</p>
               </div>
             ) : (
@@ -264,36 +264,36 @@ export default function SalesPage() {
                       type="button"
                       disabled={!inStock}
                       onClick={() => addToCart(p)}
-                      className={`relative bg-white/5 border rounded-2xl p-3 text-left transition-all flex flex-col justify-between group ${
+                      className={`relative bg-white dark:bg-white/5 border rounded-2xl p-3 text-left transition-all flex flex-col justify-between group shadow-sm ${
                         !inStock
-                          ? "opacity-40 border-white/5 cursor-not-allowed"
-                          : "border-white/10 hover:border-green-500/60 hover:bg-white/10 active:scale-97 cursor-pointer"
+                          ? "opacity-40 border-slate-200 dark:border-white/5 cursor-not-allowed"
+                          : "border-slate-200 dark:border-white/10 hover:border-green-500 hover:shadow-md active:scale-97 cursor-pointer"
                       }`}
                     >
                       {itemInCart && (
-                        <span className="absolute top-2 right-2 bg-green-500 text-black text-[10px] font-bold px-1.5 py-0.5 rounded-full shadow">
+                        <span className="absolute top-2 right-2 bg-green-600 text-white dark:bg-green-500 dark:text-black text-[10px] font-bold px-1.5 py-0.5 rounded-full shadow">
                           {itemInCart.quantity}
                         </span>
                       )}
 
                       <div>
-                        <span className="text-[10px] font-medium text-gray-400 uppercase tracking-wider block truncate">
+                        <span className="text-[10px] font-semibold text-slate-400 dark:text-gray-400 uppercase tracking-wider block truncate">
                           {p.category || "General"}
                         </span>
-                        <h2 className="text-xs sm:text-sm font-bold text-white mt-1 leading-snug line-clamp-2">
+                        <h2 className="text-xs sm:text-sm font-bold text-slate-900 dark:text-white mt-1 leading-snug line-clamp-2">
                           {p.name}
                         </h2>
                       </div>
 
-                      <div className="mt-3 pt-2 border-t border-white/5 flex items-center justify-between">
+                      <div className="mt-3 pt-2 border-t border-slate-100 dark:border-white/5 flex items-center justify-between">
                         <div>
-                          <span className="text-xs sm:text-sm font-extrabold text-green-400 font-mono">
+                          <span className="text-xs sm:text-sm font-extrabold text-green-600 dark:text-green-400 font-mono">
                             {currencySymbol}{Number(p.sell_price || 0).toLocaleString()}
                           </span>
                         </div>
                         <span
                           className={`text-[10px] font-medium ${
-                            inStock ? "text-gray-400" : "text-red-400"
+                            inStock ? "text-slate-500 dark:text-gray-400" : "text-red-500 dark:text-red-400"
                           }`}
                         >
                           {inStock ? `${p.stock} in stock` : "Out of stock"}
@@ -308,16 +308,16 @@ export default function SalesPage() {
 
           {/* Right: Cart & Checkout Summary (5 Cols on desktop) */}
           <div
-            className={`fixed inset-y-0 right-0 z-40 w-full sm:w-96 bg-gray-950 border-l border-white/10 p-4 sm:p-5 flex flex-col justify-between transition-transform duration-300 shadow-2xl lg:static lg:z-auto lg:w-full lg:col-span-5 xl:col-span-4 lg:rounded-3xl lg:border lg:bg-white/5 ${
+            className={`fixed inset-y-0 right-0 z-40 w-full sm:w-96 bg-white dark:bg-gray-950 border-l border-slate-200 dark:border-white/10 p-4 sm:p-5 flex flex-col justify-between transition-transform duration-300 shadow-2xl lg:static lg:z-auto lg:w-full lg:col-span-5 xl:col-span-4 lg:rounded-3xl lg:border lg:bg-white dark:lg:bg-white/5 ${
               mobileCartOpen ? "translate-x-0" : "translate-x-full lg:translate-x-0"
             }`}
           >
             {/* Cart Header */}
-            <div className="flex items-center justify-between pb-3 border-b border-white/10">
+            <div className="flex items-center justify-between pb-3 border-b border-slate-200 dark:border-white/10">
               <div className="flex items-center gap-2">
-                <ShoppingCart className="text-green-500 w-5 h-5" />
-                <h2 className="font-bold text-base text-white">Current Order</h2>
-                <span className="text-xs bg-white/10 text-gray-300 px-2 py-0.5 rounded-full font-semibold">
+                <ShoppingCart className="text-green-600 dark:text-green-500 w-5 h-5" />
+                <h2 className="font-bold text-base text-slate-900 dark:text-white">Current Order</h2>
+                <span className="text-xs bg-slate-100 dark:bg-white/10 text-slate-700 dark:text-gray-300 px-2 py-0.5 rounded-full font-semibold">
                   {totalItemsCount}
                 </span>
               </div>
@@ -326,7 +326,7 @@ export default function SalesPage() {
                   <button
                     type="button"
                     onClick={() => setCart([])}
-                    className="text-xs text-red-400 hover:underline"
+                    className="text-xs text-red-500 hover:underline"
                   >
                     Clear
                   </button>
@@ -334,7 +334,7 @@ export default function SalesPage() {
                 <button
                   type="button"
                   onClick={() => setMobileCartOpen(false)}
-                  className="lg:hidden p-1.5 text-gray-400 hover:text-white rounded-lg"
+                  className="lg:hidden p-1.5 text-slate-400 hover:text-slate-900 dark:hover:text-white rounded-lg"
                 >
                   ✕
                 </button>
@@ -344,7 +344,7 @@ export default function SalesPage() {
             {/* Cart Line Items List */}
             <div className="flex-1 overflow-y-auto py-3 space-y-2.5 max-h-[calc(100vh-320px)] lg:max-h-[380px] pr-1">
               {cart.length === 0 ? (
-                <div className="py-12 text-center text-gray-500 flex flex-col items-center justify-center gap-2">
+                <div className="py-12 text-center text-slate-400 dark:text-gray-500 flex flex-col items-center justify-center gap-2">
                   <ShoppingCart size={32} className="opacity-30" />
                   <p className="text-xs">Cart is empty. Tap products or scan barcode to add items.</p>
                 </div>
@@ -352,13 +352,13 @@ export default function SalesPage() {
                 cart.map((item) => (
                   <div
                     key={item.id}
-                    className="bg-black/40 border border-white/5 rounded-xl p-2.5 flex items-center justify-between gap-2"
+                    className="bg-slate-50 dark:bg-black/40 border border-slate-200 dark:border-white/5 rounded-xl p-2.5 flex items-center justify-between gap-2"
                   >
                     <div className="flex-1 min-w-0">
-                      <h3 className="text-xs font-semibold text-white truncate">{item.name}</h3>
-                      <div className="text-[11px] text-gray-400 font-mono mt-0.5">
+                      <h3 className="text-xs font-semibold text-slate-900 dark:text-white truncate">{item.name}</h3>
+                      <div className="text-[11px] text-slate-500 dark:text-gray-400 font-mono mt-0.5">
                         {currencySymbol}{Number(item.sell_price || 0).toLocaleString()} $\times$ {item.quantity} ={" "}
-                        <span className="text-green-400 font-bold">
+                        <span className="text-green-600 dark:text-green-400 font-bold">
                           {currencySymbol}{(Number(item.sell_price || 0) * item.quantity).toLocaleString()}
                         </span>
                       </div>
@@ -368,19 +368,19 @@ export default function SalesPage() {
                       <button
                         type="button"
                         onClick={() => updateQuantity(item.id, -1)}
-                        className="w-6 h-6 rounded-lg bg-white/10 hover:bg-white/20 text-white flex items-center justify-center active:scale-90 transition-transform"
+                        className="w-6 h-6 rounded-lg bg-slate-200 dark:bg-white/10 hover:bg-slate-300 dark:hover:bg-white/20 text-slate-700 dark:text-white flex items-center justify-center active:scale-90 transition-transform"
                       >
                         <Minus size={12} />
                       </button>
 
-                      <span className="w-6 text-center text-xs font-bold font-mono">
+                      <span className="w-6 text-center text-xs font-bold font-mono text-slate-900 dark:text-white">
                         {item.quantity}
                       </span>
 
                       <button
                         type="button"
                         onClick={() => updateQuantity(item.id, 1)}
-                        className="w-6 h-6 rounded-lg bg-white/10 hover:bg-white/20 text-white flex items-center justify-center active:scale-90 transition-transform"
+                        className="w-6 h-6 rounded-lg bg-slate-200 dark:bg-white/10 hover:bg-slate-300 dark:hover:bg-white/20 text-slate-700 dark:text-white flex items-center justify-center active:scale-90 transition-transform"
                       >
                         <Plus size={12} />
                       </button>
@@ -388,7 +388,7 @@ export default function SalesPage() {
                       <button
                         type="button"
                         onClick={() => removeFromCart(item.id)}
-                        className="w-6 h-6 rounded-lg text-red-400 hover:bg-red-500/20 flex items-center justify-center ml-1"
+                        className="w-6 h-6 rounded-lg text-red-500 hover:bg-red-50 dark:hover:bg-red-500/20 flex items-center justify-center ml-1"
                         aria-label="Remove item"
                       >
                         <Trash2 size={13} />
@@ -400,14 +400,14 @@ export default function SalesPage() {
             </div>
 
             {/* Financial Summary & Checkout */}
-            <div className="mt-4 pt-4 border-t border-white/10 space-y-3">
-              <div className="flex justify-between items-center text-sm text-gray-400">
+            <div className="mt-4 pt-4 border-t border-slate-200 dark:border-white/10 space-y-3">
+              <div className="flex justify-between items-center text-sm text-slate-500 dark:text-gray-400">
                 <span>Subtotal</span>
                 <span className="font-mono">{currencySymbol}{total.toLocaleString()}</span>
               </div>
-              <div className="flex justify-between items-center text-lg sm:text-xl font-bold text-white">
+              <div className="flex justify-between items-center text-lg sm:text-xl font-bold text-slate-900 dark:text-white">
                 <span>Total Amount</span>
-                <span className="text-green-400 font-mono">{currencySymbol}{total.toLocaleString()}</span>
+                <span className="text-green-600 dark:text-green-400 font-mono">{currencySymbol}{total.toLocaleString()}</span>
               </div>
 
               <button
@@ -416,8 +416,8 @@ export default function SalesPage() {
                 onClick={handleOpenCheckout}
                 className={`w-full py-3.5 rounded-2xl font-bold text-sm sm:text-base flex items-center justify-center gap-2 transition-all ${
                   cart.length > 0
-                    ? "bg-green-500 text-black hover:bg-green-400 cursor-pointer active:scale-98 shadow-lg shadow-green-500/20"
-                    : "bg-white/10 text-gray-500 cursor-not-allowed"
+                    ? "bg-green-600 text-white hover:bg-green-500 dark:bg-green-500 dark:text-black dark:hover:bg-green-400 cursor-pointer active:scale-98 shadow-lg shadow-green-600/20"
+                    : "bg-slate-200 dark:bg-white/10 text-slate-400 dark:text-gray-500 cursor-not-allowed"
                 }`}
               >
                 <CheckCircle2 size={18} />

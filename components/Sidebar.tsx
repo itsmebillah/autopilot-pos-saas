@@ -15,6 +15,8 @@ import {
   Store,
 } from "lucide-react";
 
+import ThemeToggle from "@/components/ThemeToggle";
+
 export default function Sidebar() {
   const [isOpen, setIsOpen] = useState(false);
   const pathname = usePathname();
@@ -48,27 +50,30 @@ export default function Sidebar() {
   return (
     <>
       {/* Mobile Top Navigation Bar (Hidden on lg+ desktops) */}
-      <header className="lg:hidden sticky top-0 z-40 flex items-center justify-between px-4 py-3 bg-gray-950/90 backdrop-blur-md border-b border-white/10 w-full print:hidden">
-        <Link href="/dashboard" className="flex items-center gap-2 text-white font-bold text-lg">
-          <Store className="text-green-500 w-6 h-6" />
+      <header className="lg:hidden sticky top-0 z-40 flex items-center justify-between px-4 py-3 bg-white/90 dark:bg-gray-950/90 backdrop-blur-md border-b border-gray-200 dark:border-white/10 w-full print:hidden transition-colors">
+        <Link href="/dashboard" className="flex items-center gap-2 text-gray-900 dark:text-white font-bold text-lg">
+          <Store className="text-green-600 dark:text-green-500 w-6 h-6" />
           <span>Autopilot POS</span>
         </Link>
 
-        <button
-          type="button"
-          onClick={() => setIsOpen(!isOpen)}
-          className="p-2 rounded-xl bg-white/10 text-white hover:bg-white/20 transition-colors focus:outline-none focus:ring-2 focus:ring-green-500"
-          aria-label={isOpen ? "Close menu" : "Open menu"}
-          aria-expanded={isOpen}
-        >
-          {isOpen ? <X size={22} /> : <Menu size={22} />}
-        </button>
+        <div className="flex items-center gap-2">
+          <ThemeToggle compact />
+          <button
+            type="button"
+            onClick={() => setIsOpen(!isOpen)}
+            className="p-2 rounded-xl bg-gray-100 dark:bg-white/10 text-gray-700 dark:text-white hover:bg-gray-200 dark:hover:bg-white/20 transition-colors focus:outline-none focus:ring-2 focus:ring-green-500"
+            aria-label={isOpen ? "Close menu" : "Open menu"}
+            aria-expanded={isOpen}
+          >
+            {isOpen ? <X size={22} /> : <Menu size={22} />}
+          </button>
+        </div>
       </header>
 
       {/* Mobile Backdrop Overlay */}
       {isOpen && (
         <div
-          className="lg:hidden fixed inset-0 z-40 bg-black/70 backdrop-blur-sm transition-opacity"
+          className="lg:hidden fixed inset-0 z-40 bg-black/60 backdrop-blur-sm transition-opacity"
           onClick={() => setIsOpen(false)}
           aria-hidden="true"
         />
@@ -76,23 +81,23 @@ export default function Sidebar() {
 
       {/* Mobile Drawer (Slides in on mobile/tablet) */}
       <aside
-        className={`lg:hidden fixed inset-y-0 left-0 z-50 w-72 max-w-[85vw] bg-gray-950 border-r border-white/10 p-5 flex flex-col justify-between transform transition-transform duration-300 ease-in-out ${
+        className={`lg:hidden fixed inset-y-0 left-0 z-50 w-72 max-w-[85vw] bg-white dark:bg-gray-950 border-r border-gray-200 dark:border-white/10 p-5 flex flex-col justify-between transform transition-transform duration-300 ease-in-out ${
           isOpen ? "translate-x-0" : "-translate-x-full"
-        } print:hidden`}
+        } print:hidden shadow-2xl`}
       >
         <div>
-          <div className="flex items-center justify-between mb-8 pb-4 border-b border-white/10">
+          <div className="flex items-center justify-between mb-8 pb-4 border-b border-gray-200 dark:border-white/10">
             <div className="flex items-center gap-2.5">
-              <Store className="text-green-500 w-7 h-7" />
+              <Store className="text-green-600 dark:text-green-500 w-7 h-7" />
               <div>
-                <h2 className="text-lg font-bold text-white leading-tight">Autopilot POS</h2>
-                <span className="text-xs text-green-400 font-medium">Universal Retail SaaS</span>
+                <h2 className="text-lg font-bold text-gray-900 dark:text-white leading-tight">Autopilot POS</h2>
+                <span className="text-xs text-green-600 dark:text-green-400 font-medium">Universal Retail SaaS</span>
               </div>
             </div>
             <button
               type="button"
               onClick={() => setIsOpen(false)}
-              className="p-2 rounded-lg text-gray-400 hover:text-white hover:bg-white/10"
+              className="p-2 rounded-lg text-gray-500 hover:text-gray-900 dark:text-gray-400 dark:hover:text-white hover:bg-gray-100 dark:hover:bg-white/10"
               aria-label="Close drawer"
             >
               <X size={20} />
@@ -109,11 +114,11 @@ export default function Sidebar() {
                   href={item.href}
                   className={`flex items-center gap-3.5 px-3.5 py-3 rounded-xl text-sm font-medium transition-all ${
                     isActive
-                      ? "bg-green-500/20 text-green-400 border border-green-500/30 font-semibold"
-                      : "text-gray-300 hover:bg-white/10 hover:text-white"
+                      ? "bg-green-500/15 text-green-700 dark:text-green-400 border border-green-500/30 font-semibold"
+                      : "text-gray-700 dark:text-gray-300 hover:bg-gray-100 dark:hover:bg-white/10 hover:text-gray-900 dark:hover:text-white"
                   }`}
                 >
-                  <Icon size={20} className={isActive ? "text-green-400" : "text-gray-400"} />
+                  <Icon size={20} className={isActive ? "text-green-600 dark:text-green-400" : "text-gray-500 dark:text-gray-400"} />
                   <span>{item.label}</span>
                 </Link>
               );
@@ -121,19 +126,22 @@ export default function Sidebar() {
           </nav>
         </div>
 
-        <div className="pt-4 border-t border-white/10 text-xs text-gray-500 text-center">
-          Autopilot POS SaaS v3.1
+        <div className="space-y-3 pt-4 border-t border-gray-200 dark:border-white/10">
+          <ThemeToggle showLabel />
+          <div className="text-xs text-gray-500 text-center">
+            Autopilot POS SaaS v3.2
+          </div>
         </div>
       </aside>
 
       {/* Desktop Sidebar (Fixed on desktop screens 1024px+) */}
-      <aside className="hidden lg:flex w-64 flex-col justify-between bg-gray-950/80 border-r border-white/10 p-5 min-h-screen sticky top-0 h-screen shrink-0 print:hidden">
+      <aside className="hidden lg:flex w-64 flex-col justify-between bg-white dark:bg-gray-950/80 border-r border-gray-200 dark:border-white/10 p-5 min-h-screen sticky top-0 h-screen shrink-0 print:hidden transition-colors">
         <div>
           <Link href="/dashboard" className="flex items-center gap-3 mb-8 px-2">
-            <Store className="text-green-500 w-8 h-8 shrink-0" />
+            <Store className="text-green-600 dark:text-green-500 w-8 h-8 shrink-0" />
             <div>
-              <h1 className="text-xl font-bold text-white leading-tight">Autopilot POS</h1>
-              <p className="text-xs text-green-400 font-medium">Universal Retail</p>
+              <h1 className="text-xl font-bold text-gray-900 dark:text-white leading-tight">Autopilot POS</h1>
+              <p className="text-xs text-green-600 dark:text-green-400 font-medium">Universal Retail</p>
             </div>
           </Link>
 
@@ -147,11 +155,11 @@ export default function Sidebar() {
                   href={item.href}
                   className={`flex items-center gap-3.5 px-3.5 py-3 rounded-xl text-sm font-medium transition-all ${
                     isActive
-                      ? "bg-green-500/20 text-green-400 border border-green-500/30 font-semibold"
-                      : "text-gray-300 hover:bg-white/10 hover:text-white"
+                      ? "bg-green-500/15 text-green-700 dark:text-green-400 border border-green-500/30 font-semibold"
+                      : "text-gray-700 dark:text-gray-300 hover:bg-gray-100 dark:hover:bg-white/10 hover:text-gray-900 dark:hover:text-white"
                   }`}
                 >
-                  <Icon size={20} className={isActive ? "text-green-400" : "text-gray-400"} />
+                  <Icon size={20} className={isActive ? "text-green-600 dark:text-green-400" : "text-gray-500 dark:text-gray-400"} />
                   <span>{item.label}</span>
                 </Link>
               );
@@ -159,9 +167,12 @@ export default function Sidebar() {
           </nav>
         </div>
 
-        <div className="pt-4 border-t border-white/10 px-2 text-xs text-gray-500 flex items-center justify-between">
-          <span>v3.1.0 Stable</span>
-          <span className="w-2 h-2 rounded-full bg-green-500 inline-block" title="Online" />
+        <div className="space-y-3 pt-4 border-t border-gray-200 dark:border-white/10 px-1">
+          <ThemeToggle showLabel />
+          <div className="text-xs text-gray-500 flex items-center justify-between px-1">
+            <span>v3.2.0 Stable</span>
+            <span className="w-2 h-2 rounded-full bg-green-500 inline-block" title="Online" />
+          </div>
         </div>
       </aside>
     </>

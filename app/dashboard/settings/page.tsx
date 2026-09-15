@@ -2,7 +2,8 @@
 
 import { useEffect, useState } from "react";
 import Sidebar from "@/components/Sidebar";
-import { Store, Upload, Save, Receipt, Globe } from "lucide-react";
+import ThemeToggle from "@/components/ThemeToggle";
+import { Store, Upload, Save, Receipt, Globe, Sun } from "lucide-react";
 
 export default function SettingsPage() {
   const [logo, setLogo] = useState<File | null>(null);
@@ -116,30 +117,45 @@ export default function SettingsPage() {
   }
 
   return (
-    <div className="min-h-screen bg-black text-white flex flex-col lg:flex-row">
+    <div className="min-h-screen bg-slate-50 dark:bg-black text-slate-900 dark:text-white flex flex-col lg:flex-row transition-colors">
       <Sidebar />
 
       <main className="flex-1 w-full max-w-5xl mx-auto p-4 sm:p-6 lg:p-8">
         {/* Header Bar */}
-        <div className="mb-6 sm:mb-8 pb-4 border-b border-white/10">
-          <h1 className="text-2xl sm:text-3xl lg:text-4xl font-bold tracking-tight">Store & Invoice Settings</h1>
-          <p className="text-xs sm:text-sm text-gray-400 mt-1">
-            Configure business identity, receipts, tax numbers, currency, and print presets
+        <div className="mb-6 sm:mb-8 pb-4 border-b border-slate-200 dark:border-white/10">
+          <h1 className="text-2xl sm:text-3xl lg:text-4xl font-bold tracking-tight text-slate-900 dark:text-white">Store & Invoice Settings</h1>
+          <p className="text-xs sm:text-sm text-slate-500 dark:text-gray-400 mt-1">
+            Configure business identity, receipts, tax numbers, currency, and appearance presets
           </p>
         </div>
 
         {/* Settings Form */}
         <form onSubmit={saveSettings} className="space-y-6">
+          {/* Section 0: Appearance & Theme Mode */}
+          <div className="bg-white dark:bg-white/5 border border-slate-200 dark:border-white/10 p-5 sm:p-7 rounded-2xl sm:rounded-3xl space-y-4 shadow-sm">
+            <div className="flex items-center gap-3 pb-3 border-b border-slate-100 dark:border-white/10">
+              <Sun className="text-amber-500 dark:text-yellow-400 w-5 h-5" />
+              <h2 className="text-base sm:text-lg font-bold text-slate-900 dark:text-white">Appearance & Theme Mode</h2>
+            </div>
+            <div className="flex flex-col sm:flex-row sm:items-center justify-between gap-4">
+              <div>
+                <p className="text-xs sm:text-sm font-semibold text-slate-800 dark:text-gray-200">System Color Scheme</p>
+                <p className="text-xs text-slate-500 dark:text-gray-400">Choose between Day Light Mode, Sleek Dark Mode, or Automatic System Preference</p>
+              </div>
+              <ThemeToggle showLabel className="self-start sm:self-auto" />
+            </div>
+          </div>
+
           {/* Section 1: Store Branding & Identity */}
-          <div className="bg-white/5 border border-white/10 p-5 sm:p-7 rounded-2xl sm:rounded-3xl space-y-5">
-            <div className="flex items-center gap-3 pb-4 border-b border-white/10">
-              <Store className="text-green-400 w-5 h-5" />
-              <h2 className="text-base sm:text-lg font-bold text-white">Business Identity & Branding</h2>
+          <div className="bg-white dark:bg-white/5 border border-slate-200 dark:border-white/10 p-5 sm:p-7 rounded-2xl sm:rounded-3xl space-y-5 shadow-sm">
+            <div className="flex items-center gap-3 pb-4 border-b border-slate-100 dark:border-white/10">
+              <Store className="text-green-600 dark:text-green-400 w-5 h-5" />
+              <h2 className="text-base sm:text-lg font-bold text-slate-900 dark:text-white">Business Identity & Branding</h2>
             </div>
 
             <div className="grid grid-cols-1 sm:grid-cols-2 gap-4 sm:gap-5">
               <div className="sm:col-span-2">
-                <label className="block text-xs font-semibold text-gray-300 mb-1.5">
+                <label className="block text-xs font-semibold text-slate-700 dark:text-gray-300 mb-1.5">
                   Business / Store Name
                 </label>
                 <input
@@ -147,45 +163,45 @@ export default function SettingsPage() {
                   placeholder="e.g. Apex Luxury Retail"
                   value={storeName}
                   onChange={(e) => setStoreName(e.target.value)}
-                  className="w-full p-3 rounded-xl bg-black/40 border border-white/10 text-white text-sm focus:outline-none focus:border-green-500"
+                  className="w-full p-3 rounded-xl bg-slate-50 dark:bg-black/40 border border-slate-200 dark:border-white/10 text-slate-900 dark:text-white text-sm focus:outline-none focus:border-green-500"
                 />
               </div>
 
               <div>
-                <label className="block text-xs font-semibold text-gray-300 mb-1.5">Contact Phone</label>
+                <label className="block text-xs font-semibold text-slate-700 dark:text-gray-300 mb-1.5">Contact Phone</label>
                 <input
                   type="text"
                   placeholder="e.g. +880 1700-000000"
                   value={phone}
                   onChange={(e) => setPhone(e.target.value)}
-                  className="w-full p-3 rounded-xl bg-black/40 border border-white/10 text-white text-sm focus:outline-none focus:border-green-500"
+                  className="w-full p-3 rounded-xl bg-slate-50 dark:bg-black/40 border border-slate-200 dark:border-white/10 text-slate-900 dark:text-white text-sm focus:outline-none focus:border-green-500"
                 />
               </div>
 
               <div>
-                <label className="block text-xs font-semibold text-gray-300 mb-1.5">Official Email</label>
+                <label className="block text-xs font-semibold text-slate-700 dark:text-gray-300 mb-1.5">Official Email</label>
                 <input
                   type="email"
                   placeholder="e.g. contact@autopilotpos.com"
                   value={email}
                   onChange={(e) => setEmail(e.target.value)}
-                  className="w-full p-3 rounded-xl bg-black/40 border border-white/10 text-white text-sm focus:outline-none focus:border-green-500"
+                  className="w-full p-3 rounded-xl bg-slate-50 dark:bg-black/40 border border-slate-200 dark:border-white/10 text-slate-900 dark:text-white text-sm focus:outline-none focus:border-green-500"
                 />
               </div>
 
               <div>
-                <label className="block text-xs font-semibold text-gray-300 mb-1.5">Website Domain</label>
+                <label className="block text-xs font-semibold text-slate-700 dark:text-gray-300 mb-1.5">Website Domain</label>
                 <input
                   type="text"
                   placeholder="e.g. https://store.example.com"
                   value={website}
                   onChange={(e) => setWebsite(e.target.value)}
-                  className="w-full p-3 rounded-xl bg-black/40 border border-white/10 text-white text-sm focus:outline-none focus:border-green-500"
+                  className="w-full p-3 rounded-xl bg-slate-50 dark:bg-black/40 border border-slate-200 dark:border-white/10 text-slate-900 dark:text-white text-sm focus:outline-none focus:border-green-500"
                 />
               </div>
 
               <div>
-                <label className="block text-xs font-semibold text-gray-300 mb-1.5">
+                <label className="block text-xs font-semibold text-slate-700 dark:text-gray-300 mb-1.5">
                   Tax / VAT Registration Number (BIN / GST)
                 </label>
                 <input
@@ -193,35 +209,35 @@ export default function SettingsPage() {
                   placeholder="e.g. BIN-001234567-0101"
                   value={taxNumber}
                   onChange={(e) => setTaxNumber(e.target.value)}
-                  className="w-full p-3 rounded-xl bg-black/40 border border-white/10 text-white text-sm focus:outline-none focus:border-green-500"
+                  className="w-full p-3 rounded-xl bg-slate-50 dark:bg-black/40 border border-slate-200 dark:border-white/10 text-slate-900 dark:text-white text-sm focus:outline-none focus:border-green-500"
                 />
               </div>
 
               <div className="sm:col-span-2">
-                <label className="block text-xs font-semibold text-gray-300 mb-1.5">Physical Outlet Address</label>
+                <label className="block text-xs font-semibold text-slate-700 dark:text-gray-300 mb-1.5">Physical Outlet Address</label>
                 <textarea
                   rows={2}
                   placeholder="e.g. Level 3, Gulshan Avenue, Dhaka - 1212"
                   value={address}
                   onChange={(e) => setAddress(e.target.value)}
-                  className="w-full p-3 rounded-xl bg-black/40 border border-white/10 text-white text-sm focus:outline-none focus:border-green-500 resize-none"
+                  className="w-full p-3 rounded-xl bg-slate-50 dark:bg-black/40 border border-slate-200 dark:border-white/10 text-slate-900 dark:text-white text-sm focus:outline-none focus:border-green-500 resize-none"
                 />
               </div>
 
               {/* Logo Upload */}
               <div className="sm:col-span-2">
-                <label className="block text-xs font-semibold text-gray-300 mb-1.5">Store Logo</label>
+                <label className="block text-xs font-semibold text-slate-700 dark:text-gray-300 mb-1.5">Store Logo</label>
                 <div className="flex flex-col sm:flex-row sm:items-center gap-4">
                   {logoPreview && (
-                    <div className="w-20 h-20 rounded-xl overflow-hidden bg-white/5 border border-white/10 shrink-0 p-1 flex items-center justify-center">
+                    <div className="w-20 h-20 rounded-xl overflow-hidden bg-slate-100 dark:bg-white/5 border border-slate-200 dark:border-white/10 shrink-0 p-1 flex items-center justify-center">
                       <img src={logoPreview} alt="Logo preview" className="w-full h-full object-contain" />
                     </div>
                   )}
 
-                  <label className="flex-1 flex flex-col items-center justify-center p-4 rounded-xl bg-black/40 border border-dashed border-white/20 hover:border-green-500/50 cursor-pointer transition-colors">
-                    <Upload className="w-5 h-5 text-gray-400 mb-1" />
-                    <span className="text-xs text-gray-300 font-medium">Click to select logo file</span>
-                    <span className="text-[10px] text-gray-500">PNG, JPG or WebP (max 2MB)</span>
+                  <label className="flex-1 flex flex-col items-center justify-center p-4 rounded-xl bg-slate-50 dark:bg-black/40 border border-dashed border-slate-300 dark:border-white/20 hover:border-green-500 cursor-pointer transition-colors">
+                    <Upload className="w-5 h-5 text-slate-400 dark:text-gray-400 mb-1" />
+                    <span className="text-xs text-slate-700 dark:text-gray-300 font-medium">Click to select logo file</span>
+                    <span className="text-[10px] text-slate-400 dark:text-gray-500">PNG, JPG or WebP (max 2MB)</span>
                     <input
                       type="file"
                       accept="image/*"
@@ -241,41 +257,41 @@ export default function SettingsPage() {
           </div>
 
           {/* Section 2: International Currency & Tax Preferences */}
-          <div className="bg-white/5 border border-white/10 p-5 sm:p-7 rounded-2xl sm:rounded-3xl space-y-5">
-            <div className="flex items-center gap-3 pb-4 border-b border-white/10">
-              <Globe className="text-blue-400 w-5 h-5" />
-              <h2 className="text-base sm:text-lg font-bold text-white">International Currency & Tax Configuration</h2>
+          <div className="bg-white dark:bg-white/5 border border-slate-200 dark:border-white/10 p-5 sm:p-7 rounded-2xl sm:rounded-3xl space-y-5 shadow-sm">
+            <div className="flex items-center gap-3 pb-4 border-b border-slate-100 dark:border-white/10">
+              <Globe className="text-blue-600 dark:text-blue-400 w-5 h-5" />
+              <h2 className="text-base sm:text-lg font-bold text-slate-900 dark:text-white">International Currency & Tax Configuration</h2>
             </div>
 
             <div className="grid grid-cols-1 sm:grid-cols-3 gap-4">
               <div>
-                <label className="block text-xs font-semibold text-gray-300 mb-1.5">Currency Symbol</label>
+                <label className="block text-xs font-semibold text-slate-700 dark:text-gray-300 mb-1.5">Currency Symbol</label>
                 <input
                   type="text"
                   placeholder="৳, $, €, £, AED, ₹"
                   value={currency}
                   onChange={(e) => setCurrency(e.target.value)}
-                  className="w-full p-3 rounded-xl bg-black/40 border border-white/10 text-white text-sm font-bold focus:outline-none focus:border-green-500"
+                  className="w-full p-3 rounded-xl bg-slate-50 dark:bg-black/40 border border-slate-200 dark:border-white/10 text-slate-900 dark:text-white text-sm font-bold focus:outline-none focus:border-green-500"
                 />
               </div>
 
               <div>
-                <label className="block text-xs font-semibold text-gray-300 mb-1.5">Currency ISO Code</label>
+                <label className="block text-xs font-semibold text-slate-700 dark:text-gray-300 mb-1.5">Currency ISO Code</label>
                 <input
                   type="text"
                   placeholder="BDT, USD, EUR, GBP, AED"
                   value={currencyCode}
                   onChange={(e) => setCurrencyCode(e.target.value.toUpperCase())}
-                  className="w-full p-3 rounded-xl bg-black/40 border border-white/10 text-white text-sm font-mono focus:outline-none focus:border-green-500"
+                  className="w-full p-3 rounded-xl bg-slate-50 dark:bg-black/40 border border-slate-200 dark:border-white/10 text-slate-900 dark:text-white text-sm font-mono focus:outline-none focus:border-green-500"
                 />
               </div>
 
               <div>
-                <label className="block text-xs font-semibold text-gray-300 mb-1.5">Symbol Placement</label>
+                <label className="block text-xs font-semibold text-slate-700 dark:text-gray-300 mb-1.5">Symbol Placement</label>
                 <select
                   value={currencyPosition}
                   onChange={(e) => setCurrencyPosition(e.target.value as any)}
-                  className="w-full p-3 rounded-xl bg-black/40 border border-white/10 text-white text-sm focus:outline-none focus:border-green-500"
+                  className="w-full p-3 rounded-xl bg-slate-50 dark:bg-black/40 border border-slate-200 dark:border-white/10 text-slate-900 dark:text-white text-sm focus:outline-none focus:border-green-500"
                 >
                   <option value="BEFORE">Before Amount (e.g. ৳ 100.00)</option>
                   <option value="AFTER">After Amount (e.g. 100.00 ৳)</option>
@@ -283,34 +299,34 @@ export default function SettingsPage() {
               </div>
 
               <div>
-                <label className="block text-xs font-semibold text-gray-300 mb-1.5">Tax Label</label>
+                <label className="block text-xs font-semibold text-slate-700 dark:text-gray-300 mb-1.5">Tax Label</label>
                 <input
                   type="text"
                   placeholder="VAT, GST, Sales Tax, Tax"
                   value={taxLabel}
                   onChange={(e) => setTaxLabel(e.target.value)}
-                  className="w-full p-3 rounded-xl bg-black/40 border border-white/10 text-white text-sm focus:outline-none focus:border-green-500"
+                  className="w-full p-3 rounded-xl bg-slate-50 dark:bg-black/40 border border-slate-200 dark:border-white/10 text-slate-900 dark:text-white text-sm focus:outline-none focus:border-green-500"
                 />
               </div>
 
               <div>
-                <label className="block text-xs font-semibold text-gray-300 mb-1.5">Default Tax Rate (%)</label>
+                <label className="block text-xs font-semibold text-slate-700 dark:text-gray-300 mb-1.5">Default Tax Rate (%)</label>
                 <input
                   type="number"
                   step="any"
                   min="0"
                   value={taxRate}
                   onChange={(e) => setTaxRate(e.target.value)}
-                  className="w-full p-3 rounded-xl bg-black/40 border border-white/10 text-white text-sm focus:outline-none focus:border-green-500"
+                  className="w-full p-3 rounded-xl bg-slate-50 dark:bg-black/40 border border-slate-200 dark:border-white/10 text-slate-900 dark:text-white text-sm focus:outline-none focus:border-green-500"
                 />
               </div>
 
               <div>
-                <label className="block text-xs font-semibold text-gray-300 mb-1.5">Default Receipt Format</label>
+                <label className="block text-xs font-semibold text-slate-700 dark:text-gray-300 mb-1.5">Default Receipt Format</label>
                 <select
                   value={receiptTemplate}
                   onChange={(e) => setReceiptTemplate(e.target.value as any)}
-                  className="w-full p-3 rounded-xl bg-black/40 border border-white/10 text-white text-sm focus:outline-none focus:border-green-500"
+                  className="w-full p-3 rounded-xl bg-slate-50 dark:bg-black/40 border border-slate-200 dark:border-white/10 text-slate-900 dark:text-white text-sm focus:outline-none focus:border-green-500"
                 >
                   <option value="thermal_80mm">Thermal 80mm Standard</option>
                   <option value="thermal_58mm">Thermal 58mm Compact</option>
@@ -321,15 +337,15 @@ export default function SettingsPage() {
           </div>
 
           {/* Section 3: Receipt Footers & Policies */}
-          <div className="bg-white/5 border border-white/10 p-5 sm:p-7 rounded-2xl sm:rounded-3xl space-y-5">
-            <div className="flex items-center gap-3 pb-4 border-b border-white/10">
-              <Receipt className="text-yellow-400 w-5 h-5" />
-              <h2 className="text-base sm:text-lg font-bold text-white">Invoice Footers & Return Policies</h2>
+          <div className="bg-white dark:bg-white/5 border border-slate-200 dark:border-white/10 p-5 sm:p-7 rounded-2xl sm:rounded-3xl space-y-5 shadow-sm">
+            <div className="flex items-center gap-3 pb-4 border-b border-slate-100 dark:border-white/10">
+              <Receipt className="text-amber-500 dark:text-yellow-400 w-5 h-5" />
+              <h2 className="text-base sm:text-lg font-bold text-slate-900 dark:text-white">Invoice Footers & Return Policies</h2>
             </div>
 
             <div className="space-y-4">
               <div>
-                <label className="block text-xs font-semibold text-gray-300 mb-1.5">
+                <label className="block text-xs font-semibold text-slate-700 dark:text-gray-300 mb-1.5">
                   Receipt Thank-You Message
                 </label>
                 <input
@@ -337,12 +353,12 @@ export default function SettingsPage() {
                   placeholder="e.g. Thank you for shopping with us! Please come again."
                   value={receiptFooter}
                   onChange={(e) => setReceiptFooter(e.target.value)}
-                  className="w-full p-3 rounded-xl bg-black/40 border border-white/10 text-white text-sm focus:outline-none focus:border-green-500"
+                  className="w-full p-3 rounded-xl bg-slate-50 dark:bg-black/40 border border-slate-200 dark:border-white/10 text-slate-900 dark:text-white text-sm focus:outline-none focus:border-green-500"
                 />
               </div>
 
               <div>
-                <label className="block text-xs font-semibold text-gray-300 mb-1.5">
+                <label className="block text-xs font-semibold text-slate-700 dark:text-gray-300 mb-1.5">
                   Return / Exchange Policy Notice
                 </label>
                 <textarea
@@ -350,7 +366,7 @@ export default function SettingsPage() {
                   placeholder="e.g. Exchange available within 7 days with original invoice. No cash refund."
                   value={returnPolicy}
                   onChange={(e) => setReturnPolicy(e.target.value)}
-                  className="w-full p-3 rounded-xl bg-black/40 border border-white/10 text-white text-sm focus:outline-none focus:border-green-500 resize-none"
+                  className="w-full p-3 rounded-xl bg-slate-50 dark:bg-black/40 border border-slate-200 dark:border-white/10 text-slate-900 dark:text-white text-sm focus:outline-none focus:border-green-500 resize-none"
                 />
               </div>
             </div>
@@ -361,7 +377,7 @@ export default function SettingsPage() {
             <button
               type="submit"
               disabled={isSaving}
-              className="w-full sm:w-auto flex items-center justify-center gap-2 bg-green-500 hover:bg-green-400 text-black px-8 py-3.5 rounded-2xl font-bold text-sm transition-all shadow-xl shadow-green-500/20 active:scale-95 disabled:opacity-50"
+              className="w-full sm:w-auto flex items-center justify-center gap-2 bg-green-600 hover:bg-green-500 dark:bg-green-500 dark:hover:bg-green-400 text-white dark:text-black px-8 py-3.5 rounded-2xl font-bold text-sm transition-all shadow-xl shadow-green-600/20 active:scale-95 disabled:opacity-50"
             >
               <Save size={18} />
               <span>{isSaving ? "Saving Preferences..." : "Save All Settings"}</span>

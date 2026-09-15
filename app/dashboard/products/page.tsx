@@ -207,15 +207,15 @@ export default function ProductsPage() {
   );
 
   return (
-    <div className="min-h-screen bg-black text-white flex flex-col lg:flex-row">
+    <div className="min-h-screen bg-slate-50 dark:bg-black text-slate-900 dark:text-white flex flex-col lg:flex-row transition-colors">
       <Sidebar />
 
       <main className="flex-1 w-full max-w-7xl mx-auto p-4 sm:p-6 lg:p-8">
         {/* Header Bar */}
-        <div className="flex flex-col sm:flex-row sm:items-center justify-between gap-4 mb-6 pb-4 border-b border-white/10">
+        <div className="flex flex-col sm:flex-row sm:items-center justify-between gap-4 mb-6 pb-4 border-b border-slate-200 dark:border-white/10">
           <div>
-            <h1 className="text-2xl sm:text-3xl lg:text-4xl font-bold tracking-tight">Products</h1>
-            <p className="text-xs sm:text-sm text-gray-400 mt-1">
+            <h1 className="text-2xl sm:text-3xl lg:text-4xl font-bold tracking-tight text-slate-900 dark:text-white">Products</h1>
+            <p className="text-xs sm:text-sm text-slate-500 dark:text-gray-400 mt-1">
               Catalog management, barcode generation, inventory levels & bulk import
             </p>
           </div>
@@ -224,7 +224,7 @@ export default function ProductsPage() {
             <button
               type="button"
               onClick={() => setIsBulkImportOpen(true)}
-              className="flex items-center gap-2 bg-white/10 hover:bg-white/20 text-white px-3.5 py-2 rounded-xl text-xs sm:text-sm font-semibold transition-colors"
+              className="flex items-center gap-2 bg-slate-100 dark:bg-white/10 hover:bg-slate-200 dark:hover:bg-white/20 text-slate-700 dark:text-white px-3.5 py-2 rounded-xl text-xs sm:text-sm font-semibold transition-colors"
             >
               <Upload size={16} />
               <span>Bulk Import CSV</span>
@@ -234,7 +234,7 @@ export default function ProductsPage() {
               <button
                 type="button"
                 onClick={openPrintForSelected}
-                className="flex items-center gap-2 bg-blue-500 hover:bg-blue-600 text-white px-3.5 py-2 rounded-xl text-xs sm:text-sm font-semibold shadow-lg transition-all animate-pulse"
+                className="flex items-center gap-2 bg-blue-600 hover:bg-blue-500 text-white px-3.5 py-2 rounded-xl text-xs sm:text-sm font-semibold shadow-md transition-all animate-pulse"
               >
                 <Printer size={16} />
                 <span>Print Labels ({selectedProductIds.size})</span>
@@ -244,7 +244,7 @@ export default function ProductsPage() {
             <button
               type="button"
               onClick={() => setIsAdding(!isAdding)}
-              className="flex items-center gap-2 bg-green-500 text-black px-4 py-2 rounded-xl text-xs sm:text-sm font-semibold hover:bg-green-400 transition-colors shadow-lg active:scale-95"
+              className="flex items-center gap-2 bg-green-600 dark:bg-green-500 text-white dark:text-black px-4 py-2 rounded-xl text-xs sm:text-sm font-semibold hover:bg-green-500 dark:hover:bg-green-400 transition-colors shadow-md active:scale-95"
             >
               <Plus size={18} />
               <span>{isAdding ? "Close Form" : "Add Product"}</span>
@@ -256,17 +256,17 @@ export default function ProductsPage() {
         {isAdding && (
           <form
             onSubmit={addProduct}
-            className="bg-white/5 border border-white/10 p-4 sm:p-6 rounded-2xl mb-8 space-y-4 max-w-3xl"
+            className="bg-white dark:bg-white/5 border border-slate-200 dark:border-white/10 p-4 sm:p-6 rounded-2xl mb-8 space-y-4 max-w-3xl shadow-sm"
           >
-            <h2 className="text-lg font-bold text-white mb-2 flex items-center gap-2">
-              <Package className="text-green-500 w-5 h-5" />
+            <h2 className="text-lg font-bold text-slate-900 dark:text-white mb-2 flex items-center gap-2">
+              <Package className="text-green-600 dark:text-green-500 w-5 h-5" />
               <span>New Product Details</span>
             </h2>
 
             <div className="grid grid-cols-1 sm:grid-cols-2 gap-4">
               {/* Product Name with Suggestions */}
               <div className="sm:col-span-2 relative">
-                <label className="block text-xs font-medium text-gray-400 mb-1">Product Name *</label>
+                <label className="block text-xs font-semibold text-slate-700 dark:text-gray-400 mb-1">Product Name *</label>
                 <input
                   type="text"
                   placeholder="e.g. Wireless Noise Canceling Headphones"
@@ -282,12 +282,12 @@ export default function ProductsPage() {
                       setSuggestions([]);
                     }
                   }}
-                  className="w-full p-3 rounded-xl bg-black/50 border border-white/10 text-white text-sm focus:outline-none focus:border-green-500"
+                  className="w-full p-3 rounded-xl bg-slate-50 dark:bg-black/50 border border-slate-200 dark:border-white/10 text-slate-900 dark:text-white text-sm focus:outline-none focus:border-green-500"
                   required
                 />
 
                 {suggestions.length > 0 && (
-                  <div className="absolute z-20 left-0 right-0 top-full mt-1 bg-gray-900 border border-white/10 rounded-xl overflow-hidden shadow-2xl max-h-48 overflow-y-auto">
+                  <div className="absolute z-20 left-0 right-0 top-full mt-1 bg-white dark:bg-gray-900 border border-slate-200 dark:border-white/10 rounded-xl overflow-hidden shadow-2xl max-h-48 overflow-y-auto">
                     {suggestions.map((item) => (
                       <div
                         key={item.id}
@@ -299,10 +299,10 @@ export default function ProductsPage() {
                           setCategory(item.category || "");
                           setSuggestions([]);
                         }}
-                        className="p-3 hover:bg-white/10 cursor-pointer text-sm text-gray-300 hover:text-white border-b border-white/5"
+                        className="p-3 hover:bg-slate-100 dark:hover:bg-white/10 cursor-pointer text-sm text-slate-700 dark:text-gray-300 hover:text-slate-900 dark:hover:text-white border-b border-slate-100 dark:border-white/5"
                       >
                         <span className="font-semibold">{item.name}</span>
-                        <span className="text-xs text-gray-400 ml-2">({item.category || "General"})</span>
+                        <span className="text-xs text-slate-500 dark:text-gray-400 ml-2">({item.category || "General"})</span>
                       </div>
                     ))}
                   </div>
@@ -312,11 +312,11 @@ export default function ProductsPage() {
               {/* Barcode with Auto-Generator */}
               <div>
                 <div className="flex items-center justify-between mb-1">
-                  <label className="block text-xs font-medium text-gray-400">Barcode / SKU</label>
+                  <label className="block text-xs font-semibold text-slate-700 dark:text-gray-400">Barcode / SKU</label>
                   <button
                     type="button"
                     onClick={handleAutoGenerateBarcode}
-                    className="text-[11px] text-green-400 hover:text-green-300 flex items-center gap-1 font-semibold"
+                    className="text-[11px] text-green-600 dark:text-green-400 hover:underline flex items-center gap-1 font-semibold"
                   >
                     <Sparkles size={12} /> Auto-Generate
                   </button>
@@ -327,67 +327,67 @@ export default function ProductsPage() {
                     placeholder="Enter or generate barcode"
                     value={barcode}
                     onChange={(e) => setBarcode(e.target.value)}
-                    className="w-full p-3 pr-10 rounded-xl bg-black/50 border border-white/10 text-white text-sm font-mono focus:outline-none focus:border-green-500"
+                    className="w-full p-3 pr-10 rounded-xl bg-slate-50 dark:bg-black/50 border border-slate-200 dark:border-white/10 text-slate-900 dark:text-white text-sm font-mono focus:outline-none focus:border-green-500"
                   />
-                  <Barcode className="absolute right-3 top-1/2 -translate-y-1/2 text-gray-500 w-5 h-5 pointer-events-none" />
+                  <Barcode className="absolute right-3 top-1/2 -translate-y-1/2 text-slate-400 dark:text-gray-500 w-5 h-5 pointer-events-none" />
                 </div>
               </div>
 
               {/* Category */}
               <div>
-                <label className="block text-xs font-medium text-gray-400 mb-1">Category</label>
+                <label className="block text-xs font-semibold text-slate-700 dark:text-gray-400 mb-1">Category</label>
                 <input
                   type="text"
                   placeholder="e.g. Electronics, Fashion, Watches"
                   value={category}
                   onChange={(e) => setCategory(e.target.value)}
-                  className="w-full p-3 rounded-xl bg-black/50 border border-white/10 text-white text-sm focus:outline-none focus:border-green-500"
+                  className="w-full p-3 rounded-xl bg-slate-50 dark:bg-black/50 border border-slate-200 dark:border-white/10 text-slate-900 dark:text-white text-sm focus:outline-none focus:border-green-500"
                 />
               </div>
 
               {/* Buy Price */}
               <div>
-                <label className="block text-xs font-medium text-gray-400 mb-1">Cost / Buy Price (৳)</label>
+                <label className="block text-xs font-semibold text-slate-700 dark:text-gray-400 mb-1">Cost / Buy Price (৳)</label>
                 <input
                   type="number"
                   step="any"
                   placeholder="0.00"
                   value={buyPrice}
                   onChange={(e) => setBuyPrice(e.target.value)}
-                  className="w-full p-3 rounded-xl bg-black/50 border border-white/10 text-white text-sm focus:outline-none focus:border-green-500"
+                  className="w-full p-3 rounded-xl bg-slate-50 dark:bg-black/50 border border-slate-200 dark:border-white/10 text-slate-900 dark:text-white text-sm focus:outline-none focus:border-green-500"
                 />
               </div>
 
               {/* Sell Price */}
               <div>
-                <label className="block text-xs font-medium text-gray-400 mb-1">Selling Price (৳) *</label>
+                <label className="block text-xs font-semibold text-slate-700 dark:text-gray-400 mb-1">Selling Price (৳) *</label>
                 <input
                   type="number"
                   step="any"
                   placeholder="0.00"
                   value={sellPrice}
                   onChange={(e) => setSellPrice(e.target.value)}
-                  className="w-full p-3 rounded-xl bg-black/50 border border-white/10 text-white text-sm focus:outline-none focus:border-green-500"
+                  className="w-full p-3 rounded-xl bg-slate-50 dark:bg-black/50 border border-slate-200 dark:border-white/10 text-slate-900 dark:text-white text-sm focus:outline-none focus:border-green-500"
                   required
                 />
               </div>
 
               {/* Initial Stock */}
               <div className="sm:col-span-2">
-                <label className="block text-xs font-medium text-gray-400 mb-1">Initial Stock Qty</label>
+                <label className="block text-xs font-semibold text-slate-700 dark:text-gray-400 mb-1">Initial Stock Qty</label>
                 <input
                   type="number"
                   placeholder="0"
                   value={stock}
                   onChange={(e) => setStock(e.target.value)}
-                  className="w-full p-3 rounded-xl bg-black/50 border border-white/10 text-white text-sm focus:outline-none focus:border-green-500"
+                  className="w-full p-3 rounded-xl bg-slate-50 dark:bg-black/50 border border-slate-200 dark:border-white/10 text-slate-900 dark:text-white text-sm focus:outline-none focus:border-green-500"
                 />
               </div>
             </div>
 
             <button
               type="submit"
-              className="w-full bg-green-500 text-black py-3 rounded-xl font-bold hover:bg-green-400 transition-colors shadow-lg"
+              className="w-full bg-green-600 hover:bg-green-500 dark:bg-green-500 dark:hover:bg-green-400 text-white dark:text-black py-3 rounded-xl font-bold transition-colors shadow-md"
             >
               Save Product
             </button>
@@ -397,13 +397,13 @@ export default function ProductsPage() {
         {/* Search & Bulk Selection Filter Bar */}
         <div className="flex flex-col sm:flex-row sm:items-center justify-between gap-3 mb-6">
           <div className="relative flex-1">
-            <Search className="absolute left-3.5 top-1/2 -translate-y-1/2 text-gray-400 w-4 h-4" />
+            <Search className="absolute left-3.5 top-1/2 -translate-y-1/2 text-slate-400 dark:text-gray-400 w-4 h-4" />
             <input
               type="text"
               placeholder="Search products by name, barcode, or category..."
               value={search}
               onChange={(e) => setSearch(e.target.value)}
-              className="w-full pl-10 pr-4 py-3 rounded-xl bg-white/5 border border-white/10 text-white placeholder-gray-500 text-sm focus:outline-none focus:border-green-500"
+              className="w-full pl-10 pr-4 py-3 rounded-xl bg-white dark:bg-white/5 border border-slate-200 dark:border-white/10 text-slate-900 dark:text-white placeholder-slate-400 dark:placeholder-gray-500 text-sm focus:outline-none focus:border-green-500 shadow-sm"
             />
           </div>
 
@@ -411,10 +411,10 @@ export default function ProductsPage() {
             <button
               type="button"
               onClick={toggleSelectAll}
-              className="text-xs text-gray-400 hover:text-white flex items-center gap-1.5 px-3 py-2 rounded-xl bg-white/5 border border-white/10 shrink-0"
+              className="text-xs text-slate-600 dark:text-gray-400 hover:text-slate-900 dark:hover:text-white flex items-center gap-1.5 px-3 py-2 rounded-xl bg-white dark:bg-white/5 border border-slate-200 dark:border-white/10 shrink-0 shadow-sm"
             >
               {selectedProductIds.size === filteredProducts.length ? (
-                <CheckSquare size={16} className="text-green-400" />
+                <CheckSquare size={16} className="text-green-600 dark:text-green-400" />
               ) : (
                 <Square size={16} />
               )}
@@ -425,7 +425,7 @@ export default function ProductsPage() {
 
         {/* Product List Grid */}
         {filteredProducts.length === 0 ? (
-          <div className="bg-white/5 border border-white/10 rounded-2xl p-10 text-center text-gray-400">
+          <div className="bg-white dark:bg-white/5 border border-slate-200 dark:border-white/10 rounded-2xl p-10 text-center text-slate-500 dark:text-gray-400 shadow-sm">
             No products found matching &quot;{search}&quot;.
           </div>
         ) : (
@@ -435,8 +435,10 @@ export default function ProductsPage() {
               return (
                 <div
                   key={product.id}
-                  className={`bg-white/5 border p-4 sm:p-5 rounded-2xl transition-all flex flex-col justify-between relative ${
-                    isSelected ? "border-green-500/80 bg-green-500/5 shadow-lg" : "border-white/10 hover:border-white/20"
+                  className={`bg-white dark:bg-white/5 border p-4 sm:p-5 rounded-2xl transition-all flex flex-col justify-between relative shadow-sm ${
+                    isSelected
+                      ? "border-green-500 bg-green-50 dark:bg-green-500/10 shadow-md"
+                      : "border-slate-200 dark:border-white/10 hover:border-slate-300 dark:hover:border-white/20"
                   }`}
                 >
                   {/* Select Checkbox & Barcode Badge */}
@@ -444,7 +446,7 @@ export default function ProductsPage() {
                     <button
                       type="button"
                       onClick={() => toggleSelectProduct(product.id)}
-                      className="p-1 text-gray-400 hover:text-white"
+                      className="p-1 text-slate-400 hover:text-slate-900 dark:hover:text-white"
                       title="Select for bulk actions"
                     >
                       {isSelected ? (
