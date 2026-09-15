@@ -12,7 +12,6 @@ export async function POST(req: Request) {
       buy_price = 0,
       sell_price = 0,
       stock = 0,
-      sku,
     } = body;
 
     if (!id) {
@@ -61,9 +60,8 @@ export async function POST(req: Request) {
       sell_price: numericSellPrice,
       stock: numericStock,
     };
-
-    if (sku !== undefined) {
-      updatePayload.sku = sku ? sku.trim() : null;
+    if (body.min_stock !== undefined) {
+      updatePayload.min_stock = parseFloat(body.min_stock) || 5;
     }
 
     const { error } = await supabase

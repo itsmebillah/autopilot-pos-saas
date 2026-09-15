@@ -12,7 +12,6 @@ export async function POST(req: Request) {
       buy_price = 0,
       sell_price = 0,
       stock = 0,
-      sku,
     } = body;
 
     // 1. Validation
@@ -73,7 +72,7 @@ export async function POST(req: Request) {
       buy_price: numericBuyPrice,
       sell_price: numericSellPrice,
       stock: numericStock,
-      sku: sku ? sku.trim() : undefined,
+      min_stock: parseFloat(body.min_stock) || 5,
     };
 
     const { data, error } = await supabase
