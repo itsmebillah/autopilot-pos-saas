@@ -42,8 +42,9 @@ export async function middleware(request: NextRequest) {
 
   const isAuthPage = request.nextUrl.pathname === "/";
   const isDashboardPage = request.nextUrl.pathname.startsWith("/dashboard");
+  const isAdminPage = request.nextUrl.pathname.startsWith("/admin");
 
-  if (!user && isDashboardPage) {
+  if (!user && (isDashboardPage || isAdminPage)) {
     // Redirect unauthenticated users to login
     const url = request.nextUrl.clone();
     url.pathname = "/";

@@ -211,3 +211,15 @@ export function requireStoreAccess(session: AuthenticatedSession, storeId: strin
     throw error;
   }
 }
+
+/**
+ * Enforces platform super admin access.
+ * Throws status 403 if the user is not a verified Platform Super Admin.
+ */
+export function requireSuperAdmin(session: AuthenticatedSession) {
+  if (!session.profile.isSuperAdmin) {
+    const error = new Error("Forbidden — Platform Super Admin privileges required");
+    (error as any).status = 403;
+    throw error;
+  }
+}

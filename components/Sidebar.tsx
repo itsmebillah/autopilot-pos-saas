@@ -16,6 +16,7 @@ import {
   ChevronDown,
   User,
   LogOut,
+  Shield,
 } from "lucide-react";
 
 import ThemeToggle from "@/components/ThemeToggle";
@@ -111,34 +112,49 @@ export default function Sidebar() {
 
           {/* Active Store Selector (Mobile) */}
           {user && (
-            <div className="mb-5 px-1">
-              <label className="text-[10px] font-bold uppercase tracking-wider text-gray-500 dark:text-gray-400 block mb-1.5">
-                Active Store Outlet
-              </label>
-              {user.accessibleStores && user.accessibleStores.length > 1 ? (
-                <div className="relative">
-                  <select
-                    value={user.activeStore?.id || ""}
-                    onChange={(e) => switchStore(e.target.value)}
-                    className="w-full bg-slate-100 dark:bg-white/10 text-slate-900 dark:text-white text-xs font-semibold rounded-xl px-3 py-2 border border-slate-300 dark:border-white/10 focus:outline-none focus:ring-2 focus:ring-green-500 cursor-pointer appearance-none pr-8 truncate"
+            <>
+              <div className="mb-5 px-1">
+                <label className="text-[10px] font-bold uppercase tracking-wider text-gray-500 dark:text-gray-400 block mb-1.5">
+                  Active Store Outlet
+                </label>
+                {user.accessibleStores && user.accessibleStores.length > 1 ? (
+                  <div className="relative">
+                    <select
+                      value={user.activeStore?.id || ""}
+                      onChange={(e) => switchStore(e.target.value)}
+                      className="w-full bg-slate-100 dark:bg-white/10 text-slate-900 dark:text-white text-xs font-semibold rounded-xl px-3 py-2 border border-slate-300 dark:border-white/10 focus:outline-none focus:ring-2 focus:ring-green-500 cursor-pointer appearance-none pr-8 truncate"
+                    >
+                      {user.accessibleStores.map((store) => (
+                        <option key={store.id} value={store.id} className="text-slate-900 bg-white dark:bg-gray-900">
+                          {store.name} {store.code ? `(${store.code})` : ""}
+                        </option>
+                      ))}
+                    </select>
+                    <ChevronDown size={14} className="absolute right-2.5 top-1/2 -translate-y-1/2 text-gray-500 pointer-events-none" />
+                  </div>
+                ) : (
+                  <div className="flex items-center gap-2 px-3 py-2 bg-slate-100 dark:bg-white/5 rounded-xl border border-slate-200 dark:border-white/10">
+                    <Store size={14} className="text-green-600 dark:text-green-400 shrink-0" />
+                    <span className="text-xs font-semibold text-slate-800 dark:text-white truncate">
+                      {user.activeStore?.name || user.storeName || "Primary Store"}
+                    </span>
+                  </div>
+                )}
+              </div>
+
+              {/* Platform Super Admin Console Link (Mobile) */}
+              {user.isSuperAdmin && (
+                <div className="mb-3 px-1">
+                  <Link
+                    href="/admin"
+                    className="flex items-center gap-2.5 px-3.5 py-2.5 rounded-xl text-xs font-bold bg-indigo-600/10 dark:bg-indigo-500/20 text-indigo-700 dark:text-indigo-300 border border-indigo-500/30 hover:bg-indigo-600/20 transition-all shadow-sm"
                   >
-                    {user.accessibleStores.map((store) => (
-                      <option key={store.id} value={store.id} className="text-slate-900 bg-white dark:bg-gray-900">
-                        {store.name} {store.code ? `(${store.code})` : ""}
-                      </option>
-                    ))}
-                  </select>
-                  <ChevronDown size={14} className="absolute right-2.5 top-1/2 -translate-y-1/2 text-gray-500 pointer-events-none" />
-                </div>
-              ) : (
-                <div className="flex items-center gap-2 px-3 py-2 bg-slate-100 dark:bg-white/5 rounded-xl border border-slate-200 dark:border-white/10">
-                  <Store size={14} className="text-green-600 dark:text-green-400 shrink-0" />
-                  <span className="text-xs font-semibold text-slate-800 dark:text-white truncate">
-                    {user.activeStore?.name || user.storeName || "Primary Store"}
-                  </span>
+                    <Shield size={16} className="text-indigo-600 dark:text-indigo-400 shrink-0" />
+                    <span>Platform Admin Console</span>
+                  </Link>
                 </div>
               )}
-            </div>
+            </>
           )}
 
           <nav className="space-y-1.5" aria-label="Mobile Navigation">
@@ -212,34 +228,49 @@ export default function Sidebar() {
 
           {/* Active Store Selector (Desktop) */}
           {user && (
-            <div className="mb-6 px-1">
-              <label className="text-[10px] font-bold uppercase tracking-wider text-gray-500 dark:text-gray-400 block mb-1.5">
-                Active Store Outlet
-              </label>
-              {user.accessibleStores && user.accessibleStores.length > 1 ? (
-                <div className="relative">
-                  <select
-                    value={user.activeStore?.id || ""}
-                    onChange={(e) => switchStore(e.target.value)}
-                    className="w-full bg-slate-100 dark:bg-white/10 text-slate-900 dark:text-white text-xs font-semibold rounded-xl px-3 py-2 border border-slate-300 dark:border-white/10 focus:outline-none focus:ring-2 focus:ring-green-500 cursor-pointer appearance-none pr-8 truncate"
+            <>
+              <div className="mb-6 px-1">
+                <label className="text-[10px] font-bold uppercase tracking-wider text-gray-500 dark:text-gray-400 block mb-1.5">
+                  Active Store Outlet
+                </label>
+                {user.accessibleStores && user.accessibleStores.length > 1 ? (
+                  <div className="relative">
+                    <select
+                      value={user.activeStore?.id || ""}
+                      onChange={(e) => switchStore(e.target.value)}
+                      className="w-full bg-slate-100 dark:bg-white/10 text-slate-900 dark:text-white text-xs font-semibold rounded-xl px-3 py-2 border border-slate-300 dark:border-white/10 focus:outline-none focus:ring-2 focus:ring-green-500 cursor-pointer appearance-none pr-8 truncate"
+                    >
+                      {user.accessibleStores.map((store) => (
+                        <option key={store.id} value={store.id} className="text-slate-900 bg-white dark:bg-gray-900">
+                          {store.name} {store.code ? `(${store.code})` : ""}
+                        </option>
+                      ))}
+                    </select>
+                    <ChevronDown size={14} className="absolute right-2.5 top-1/2 -translate-y-1/2 text-gray-500 pointer-events-none" />
+                  </div>
+                ) : (
+                  <div className="flex items-center gap-2 px-3 py-2 bg-slate-100 dark:bg-white/5 rounded-xl border border-slate-200 dark:border-white/10">
+                    <Store size={14} className="text-green-600 dark:text-green-400 shrink-0" />
+                    <span className="text-xs font-semibold text-slate-800 dark:text-white truncate">
+                      {user.activeStore?.name || user.storeName || "Primary Store"}
+                    </span>
+                  </div>
+                )}
+              </div>
+
+              {/* Platform Super Admin Console Link (Desktop) */}
+              {user.isSuperAdmin && (
+                <div className="mb-4 px-1">
+                  <Link
+                    href="/admin"
+                    className="flex items-center gap-2.5 px-3.5 py-2.5 rounded-xl text-xs font-bold bg-indigo-600/10 dark:bg-indigo-500/20 text-indigo-700 dark:text-indigo-300 border border-indigo-500/30 hover:bg-indigo-600/20 transition-all shadow-sm"
                   >
-                    {user.accessibleStores.map((store) => (
-                      <option key={store.id} value={store.id} className="text-slate-900 bg-white dark:bg-gray-900">
-                        {store.name} {store.code ? `(${store.code})` : ""}
-                      </option>
-                    ))}
-                  </select>
-                  <ChevronDown size={14} className="absolute right-2.5 top-1/2 -translate-y-1/2 text-gray-500 pointer-events-none" />
-                </div>
-              ) : (
-                <div className="flex items-center gap-2 px-3 py-2 bg-slate-100 dark:bg-white/5 rounded-xl border border-slate-200 dark:border-white/10">
-                  <Store size={14} className="text-green-600 dark:text-green-400 shrink-0" />
-                  <span className="text-xs font-semibold text-slate-800 dark:text-white truncate">
-                    {user.activeStore?.name || user.storeName || "Primary Store"}
-                  </span>
+                    <Shield size={16} className="text-indigo-600 dark:text-indigo-400 shrink-0" />
+                    <span>Platform Admin Console</span>
+                  </Link>
                 </div>
               )}
-            </div>
+            </>
           )}
 
           <nav className="space-y-1.5" aria-label="Desktop Navigation">
