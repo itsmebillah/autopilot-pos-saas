@@ -1,7 +1,14 @@
 import { createServerSupabaseClient } from "./supabase-server";
 import { getServerSupabaseAdmin } from "./supabase";
+import { cookies } from "next/headers";
 
 export type UserRole = "owner" | "manager" | "cashier" | "inventory" | "staff";
+
+export interface StoreSummary {
+  id: string;
+  name: string;
+  code?: string;
+}
 
 export interface AuthenticatedSession {
   user: {
@@ -20,11 +27,8 @@ export interface AuthenticatedSession {
     businessType?: string;
     currencyCode?: string;
   };
-  store: {
-    id: string;
-    name: string;
-    code?: string;
-  };
+  store: StoreSummary;
+  accessibleStores: StoreSummary[];
   role: UserRole;
   storeIds: string[];
 }
@@ -60,17 +64,7 @@ export async function getAuthenticatedSession(): Promise<AuthenticatedSession | 
       .limit(1)
       .single();
 
-    // 3. Fetch store memberships
-    const { data: storeMembers } = await adminClient
-      .from("store_members")
-      .select("store_id, stores(*)")
-      .eq("user_id", user.id);
-
-    const storeIds = (storeMembers || []).map((sm: any) => sm.store_id);
-
-    // If org exists, get default or first accessible store
     let primaryOrg: any = orgMember?.organizations;
-    let primaryStore: any = storeMembers?.[0]?.stores;
 
     // Fallback if tenant records are missing (e.g. single-tenant bootstrap)
     if (!primaryOrg) {
@@ -82,16 +76,73 @@ export async function getAuthenticatedSession(): Promise<AuthenticatedSession | 
       primaryOrg = fallbackOrg || { id: "00000000-0000-0000-0000-000000000000", name: "Autopilot POS Retail" };
     }
 
-    if (!primaryStore) {
-      const { data: fallbackStore } = await adminClient
+    const role: UserRole = (orgMember?.role?.toLowerCase() as UserRole) || (profile?.is_super_admin ? "owner" : "cashier");
+
+    // 3. Resolve accessible stores based on Role and Memberships
+    let accessibleStores: StoreSummary[] = [];
+
+    if (role === "owner" || role === "manager" || profile?.is_super_admin) {
+      // Owners and Managers have access to all active stores within their organization
+      const { data: orgStores } = await adminClient
         .from("stores")
-        .select("*")
-        .limit(1)
-        .single();
-      primaryStore = fallbackStore || { id: "00000000-0000-0000-0000-000000000000", name: "Main Store" };
+        .select("id, name, code, is_active")
+        .eq("organization_id", primaryOrg.id)
+        .eq("is_active", true);
+
+      if (orgStores && orgStores.length > 0) {
+        accessibleStores = orgStores.map((s: any) => ({
+          id: s.id,
+          name: s.name,
+          code: s.code || undefined,
+        }));
+      }
+    } else {
+      // Cashiers and Staff only have access to specifically assigned stores
+      const { data: storeMembers } = await adminClient
+        .from("store_members")
+        .select("store_id, stores(id, name, code, is_active, organization_id)")
+        .eq("user_id", user.id);
+
+      if (storeMembers && storeMembers.length > 0) {
+        accessibleStores = storeMembers
+          .map((sm: any) => sm.stores)
+          .filter((s: any) => s && s.is_active !== false)
+          .map((s: any) => ({
+            id: s.id,
+            name: s.name,
+            code: s.code || undefined,
+          }));
+      }
     }
 
-    const role: UserRole = (orgMember?.role?.toLowerCase() as UserRole) || (profile?.is_super_admin ? "owner" : "cashier");
+    // Fallback if no stores exist
+    if (accessibleStores.length === 0) {
+      const { data: fallbackStore } = await adminClient
+        .from("stores")
+        .select("id, name, code")
+        .limit(1)
+        .single();
+      accessibleStores = [
+        fallbackStore || { id: "00000000-0000-0000-0000-000000000000", name: "Main Store" },
+      ];
+    }
+
+    const storeIds = accessibleStores.map((s) => s.id);
+
+    // 4. Resolve Active Store (from cookie or default to first accessible store)
+    let activeStore = accessibleStores[0];
+    try {
+      const cookieStore = await cookies();
+      const activeStoreCookie = cookieStore.get("pos_active_store_id")?.value;
+      if (activeStoreCookie) {
+        const found = accessibleStores.find((s) => s.id === activeStoreCookie);
+        if (found) {
+          activeStore = found;
+        }
+      }
+    } catch {
+      // Cookies read context fallback
+    }
 
     return {
       user: {
@@ -110,11 +161,8 @@ export async function getAuthenticatedSession(): Promise<AuthenticatedSession | 
         businessType: primaryOrg?.business_type,
         currencyCode: primaryOrg?.currency_code || "BDT",
       },
-      store: {
-        id: primaryStore?.id || "00000000-0000-0000-0000-000000000000",
-        name: primaryStore?.name || "Main Store",
-        code: primaryStore?.code,
-      },
+      store: activeStore,
+      accessibleStores,
       role,
       storeIds,
     };

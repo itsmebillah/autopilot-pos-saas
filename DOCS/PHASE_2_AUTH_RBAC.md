@@ -82,29 +82,39 @@ In Phase 2, the prototype plaintext authentication mechanism (direct querying of
 
 ## 6. Automated Test Suite Verification
 
-Vitest test suite (`tests/auth-rbac.test.ts`) validates 7 critical authorization scenarios:
+Vitest test suite (`tests/auth-rbac.test.ts` and related suites) validates 85 critical authorization and business logic scenarios:
 
 ```bash
 $ npm test
 ✓ tests/inventory-ledger.test.ts (4 tests)
 ✓ tests/rls-isolation.test.ts (6 tests)
-✓ tests/quick-cash.test.ts (10 tests)
-✓ tests/barcode-engine.test.ts (5 tests)
-✓ tests/bulk-import.test.ts (5 tests)
 ✓ tests/atomic-checkout.test.ts (10 tests)
+✓ tests/quick-cash.test.ts (10 tests)
 ✓ tests/pos-engine.test.ts (10 tests)
-✓ tests/invoice-engine.test.ts (6 tests)
-✓ tests/auth-rbac.test.ts (7 tests)
+✓ tests/barcode-engine.test.ts (5 tests)
+✓ tests/product-costing.test.ts (13 tests)
+✓ tests/bulk-import.test.ts (6 tests)
+✓ tests/invoice-engine.test.ts (9 tests)
+✓ tests/auth-rbac.test.ts (12 tests)
 
-Test Files  9 passed (9)
-     Tests  63 passed (63)
+Test Files  10 passed (10)
+     Tests  85 passed (85)
 ```
 
 ---
 
-## 7. Production Build & Deployment Verification
+## 7. Multi-Shop Switching & Server Context
+
+- `POST /api/auth/switch-store` authorizes store switches strictly against the user's `session.accessibleStores`.
+- Unassigned store switch attempts return `403 Forbidden`.
+- Successful store switch sets the `pos_active_store_id` cookie and triggers an immediate refresh to prevent stale cache leakage.
+
+---
+
+## 8. Production Build & Deployment Verification
 
 - `npx tsc --noEmit`: **0 errors**
 - `npm run lint`: **0 errors**
 - `npm run build`: **Compiled successfully**
 - Production URL: `https://autopilot-pos-saas.vercel.app`
+- Verification Document: `DOCS/PHASE_2_FINAL_MULTI_SHOP_VERIFICATION.md`

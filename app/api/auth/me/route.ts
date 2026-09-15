@@ -21,8 +21,11 @@ export async function GET() {
         phone: session.profile.phone,
         role: session.role,
         isSuperAdmin: session.profile.isSuperAdmin,
+        organizationId: session.organization.id,
         organizationName: session.organization.name,
+        activeStore: session.store,
         storeName: session.store.name,
+        accessibleStores: session.accessibleStores,
       },
     });
   } catch (err: unknown) {

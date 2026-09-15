@@ -13,16 +13,18 @@ import {
   Menu,
   X,
   Store,
+  ChevronDown,
+  User,
+  LogOut,
 } from "lucide-react";
 
 import ThemeToggle from "@/components/ThemeToggle";
 import { useAuth } from "@/lib/auth-context";
-import { User, LogOut } from "lucide-react";
 
 export default function Sidebar() {
   const [isOpen, setIsOpen] = useState(false);
   const pathname = usePathname();
-  const { user, signOut } = useAuth();
+  const { user, signOut, switchStore } = useAuth();
 
   // Auto-close mobile drawer on route change
   useEffect(() => {
@@ -89,7 +91,7 @@ export default function Sidebar() {
         } print:hidden shadow-2xl`}
       >
         <div>
-          <div className="flex items-center justify-between mb-8 pb-4 border-b border-gray-200 dark:border-white/10">
+          <div className="flex items-center justify-between mb-6 pb-4 border-b border-gray-200 dark:border-white/10">
             <div className="flex items-center gap-2.5">
               <Store className="text-green-600 dark:text-green-500 w-7 h-7" />
               <div>
@@ -106,6 +108,38 @@ export default function Sidebar() {
               <X size={20} />
             </button>
           </div>
+
+          {/* Active Store Selector (Mobile) */}
+          {user && (
+            <div className="mb-5 px-1">
+              <label className="text-[10px] font-bold uppercase tracking-wider text-gray-500 dark:text-gray-400 block mb-1.5">
+                Active Store Outlet
+              </label>
+              {user.accessibleStores && user.accessibleStores.length > 1 ? (
+                <div className="relative">
+                  <select
+                    value={user.activeStore?.id || ""}
+                    onChange={(e) => switchStore(e.target.value)}
+                    className="w-full bg-slate-100 dark:bg-white/10 text-slate-900 dark:text-white text-xs font-semibold rounded-xl px-3 py-2 border border-slate-300 dark:border-white/10 focus:outline-none focus:ring-2 focus:ring-green-500 cursor-pointer appearance-none pr-8 truncate"
+                  >
+                    {user.accessibleStores.map((store) => (
+                      <option key={store.id} value={store.id} className="text-slate-900 bg-white dark:bg-gray-900">
+                        {store.name} {store.code ? `(${store.code})` : ""}
+                      </option>
+                    ))}
+                  </select>
+                  <ChevronDown size={14} className="absolute right-2.5 top-1/2 -translate-y-1/2 text-gray-500 pointer-events-none" />
+                </div>
+              ) : (
+                <div className="flex items-center gap-2 px-3 py-2 bg-slate-100 dark:bg-white/5 rounded-xl border border-slate-200 dark:border-white/10">
+                  <Store size={14} className="text-green-600 dark:text-green-400 shrink-0" />
+                  <span className="text-xs font-semibold text-slate-800 dark:text-white truncate">
+                    {user.activeStore?.name || user.storeName || "Primary Store"}
+                  </span>
+                </div>
+              )}
+            </div>
+          )}
 
           <nav className="space-y-1.5" aria-label="Mobile Navigation">
             {navItems.map((item) => {
@@ -168,13 +202,45 @@ export default function Sidebar() {
       {/* Desktop Sidebar (Fixed on desktop screens 1024px+) */}
       <aside className="hidden lg:flex w-64 flex-col justify-between bg-white dark:bg-gray-950/80 border-r border-gray-200 dark:border-white/10 p-5 min-h-screen sticky top-0 h-screen shrink-0 print:hidden transition-colors">
         <div>
-          <Link href="/dashboard" className="flex items-center gap-3 mb-8 px-2">
+          <Link href="/dashboard" className="flex items-center gap-3 mb-6 px-2">
             <Store className="text-green-600 dark:text-green-500 w-8 h-8 shrink-0" />
             <div>
               <h1 className="text-xl font-bold text-gray-900 dark:text-white leading-tight">Autopilot POS</h1>
               <p className="text-xs text-green-600 dark:text-green-400 font-medium">Universal Retail</p>
             </div>
           </Link>
+
+          {/* Active Store Selector (Desktop) */}
+          {user && (
+            <div className="mb-6 px-1">
+              <label className="text-[10px] font-bold uppercase tracking-wider text-gray-500 dark:text-gray-400 block mb-1.5">
+                Active Store Outlet
+              </label>
+              {user.accessibleStores && user.accessibleStores.length > 1 ? (
+                <div className="relative">
+                  <select
+                    value={user.activeStore?.id || ""}
+                    onChange={(e) => switchStore(e.target.value)}
+                    className="w-full bg-slate-100 dark:bg-white/10 text-slate-900 dark:text-white text-xs font-semibold rounded-xl px-3 py-2 border border-slate-300 dark:border-white/10 focus:outline-none focus:ring-2 focus:ring-green-500 cursor-pointer appearance-none pr-8 truncate"
+                  >
+                    {user.accessibleStores.map((store) => (
+                      <option key={store.id} value={store.id} className="text-slate-900 bg-white dark:bg-gray-900">
+                        {store.name} {store.code ? `(${store.code})` : ""}
+                      </option>
+                    ))}
+                  </select>
+                  <ChevronDown size={14} className="absolute right-2.5 top-1/2 -translate-y-1/2 text-gray-500 pointer-events-none" />
+                </div>
+              ) : (
+                <div className="flex items-center gap-2 px-3 py-2 bg-slate-100 dark:bg-white/5 rounded-xl border border-slate-200 dark:border-white/10">
+                  <Store size={14} className="text-green-600 dark:text-green-400 shrink-0" />
+                  <span className="text-xs font-semibold text-slate-800 dark:text-white truncate">
+                    {user.activeStore?.name || user.storeName || "Primary Store"}
+                  </span>
+                </div>
+              )}
+            </div>
+          )}
 
           <nav className="space-y-1.5" aria-label="Desktop Navigation">
             {navItems.map((item) => {
