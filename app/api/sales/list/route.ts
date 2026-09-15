@@ -1,10 +1,10 @@
 import { supabase } from "@/lib/supabase";
 import { NextResponse } from "next/server";
-import { requireAuth } from "@/lib/auth-guard";
+import { requireShopAuth } from "@/lib/auth-guard";
 
 export async function GET() {
   try {
-    await requireAuth();
+    await requireShopAuth();
 
     const { data, error } = await supabase
       .from("sales")

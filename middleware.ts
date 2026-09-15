@@ -54,7 +54,8 @@ export async function middleware(request: NextRequest) {
   if (user && isAuthPage) {
     // Redirect already authenticated users to dashboard
     const url = request.nextUrl.clone();
-    url.pathname = "/dashboard";
+    const { data: profile } = await supabase.from("user_profiles").select("is_super_admin").eq("id", user.id).single();
+    url.pathname = profile?.is_super_admin ? "/admin" : "/dashboard";
     return NextResponse.redirect(url);
   }
 

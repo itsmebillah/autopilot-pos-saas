@@ -29,3 +29,22 @@ export async function GET() {
     );
   }
 }
+
+export async function PATCH(req: Request) {
+  try {
+    if (req.headers.get("origin") !== new URL(req.url).origin) return NextResponse.json({ message: "Invalid origin." }, { status: 403 });
+    const session = await requireAuth();
+    requireSuperAdmin(session);
+    const { id, name, modules } = await req.json();
+    if (typeof id !== "string" || typeof name !== "string" || !name.trim() || name.length > 100 ||
+        !Array.isArray(modules) || modules.length > 50 || modules.some(m => typeof m !== "string" || !/^mod_[a-z0-9_]+$/.test(m))) {
+      return NextResponse.json({ message: "Invalid category settings." }, { status: 400 });
+    }
+    const { data, error } = await getServerSupabaseAdmin().from("shop_categories")
+      .update({ name: name.trim(), default_modules: [...new Set(modules)] }).eq("id", id).select("id").single();
+    if (error || !data) return NextResponse.json({ message: "Category could not be saved." }, { status: 400 });
+    return NextResponse.json({ success: true });
+  } catch (e) {
+    return NextResponse.json({ message: "Category update denied." }, { status: (e as { status?: number }).status || 500 });
+  }
+}

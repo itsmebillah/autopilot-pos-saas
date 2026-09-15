@@ -1,10 +1,10 @@
 import { NextResponse } from "next/server";
 import { supabase } from "@/lib/supabase";
-import { requireAuth, requireRole } from "@/lib/auth-guard";
+import { requireShopAuth, requireRole } from "@/lib/auth-guard";
 
 export async function POST(req: Request) {
   try {
-    const session = await requireAuth();
+    const session = await requireShopAuth();
     requireRole(session, ["owner", "manager", "inventory"]);
 
     const body = await req.json();

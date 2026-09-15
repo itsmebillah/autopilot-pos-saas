@@ -1,10 +1,10 @@
 import { supabase } from "@/lib/supabase";
 import { NextResponse } from "next/server";
-import { requireAuth } from "@/lib/auth-guard";
+import { requireShopAuth } from "@/lib/auth-guard";
 
 export async function GET() {
   try {
-    const session = await requireAuth();
+    const session = await requireShopAuth();
 
     let salesQuery = supabase.from("sales").select("id, total");
     if (session.store?.id && session.store.id !== "00000000-0000-0000-0000-000000000000") {

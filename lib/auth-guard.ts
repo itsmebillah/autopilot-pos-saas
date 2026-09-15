@@ -1,8 +1,9 @@
+import { unstable_rethrow } from "next/navigation";
 import { createServerSupabaseClient } from "./supabase-server";
 import { getServerSupabaseAdmin } from "./supabase";
 import { cookies } from "next/headers";
 
-export type UserRole = "owner" | "manager" | "cashier" | "inventory" | "staff";
+export type UserRole = "owner" | "manager" | "cashier" | "inventory" | "staff" | "platform_admin";
 
 export interface StoreSummary {
   id: string;
@@ -31,6 +32,7 @@ export interface AuthenticatedSession {
   accessibleStores: StoreSummary[];
   role: UserRole;
   storeIds: string[];
+  shopConsole?: boolean;
 }
 
 /**
@@ -55,98 +57,60 @@ export async function getAuthenticatedSession(): Promise<AuthenticatedSession | 
       .eq("id", user.id)
       .single();
 
-    // 2. Fetch organization membership
-    const { data: orgMember } = await adminClient
-      .from("organization_members")
-      .select("*, organizations(*)")
-      .eq("user_id", user.id)
-      .limit(1)
-      .single();
-
-    // If employee is deactivated, block session access immediately
-    if (orgMember && orgMember.is_active === false && !profile?.is_super_admin) {
-      return null;
-    }
-
-    let primaryOrg: any = orgMember?.organizations;
-
-    // Fallback if tenant records are missing (e.g. single-tenant bootstrap)
-    if (!primaryOrg) {
-      const { data: fallbackOrg } = await adminClient
-        .from("organizations")
-        .select("*")
-        .limit(1)
-        .single();
-      primaryOrg = fallbackOrg || { id: "00000000-0000-0000-0000-000000000000", name: "Autopilot POS Retail" };
-    }
-
-    const role: UserRole = (orgMember?.role?.toLowerCase() as UserRole) || (profile?.is_super_admin ? "owner" : "cashier");
-
-    // 3. Resolve accessible stores based on Role and Memberships
+    if (!profile) return null;
+    const cookieStore = await cookies();
+    const selected = cookieStore.get("pos_active_store_id")?.value;
+    const consoleStoreId = cookieStore.get("pos_shop_console_id")?.value;
+    let primaryOrg: any = null;
+    let role: UserRole = "platform_admin";
     let accessibleStores: StoreSummary[] = [];
+    let shopConsole = false;
 
-    if (role === "owner" || role === "manager" || profile?.is_super_admin) {
-      // Owners and Managers have access to all active stores within their organization
-      const { data: orgStores } = await adminClient
-        .from("stores")
-        .select("id, name, code, is_active")
-        .eq("organization_id", primaryOrg.id)
-        .eq("is_active", true);
-
-      if (orgStores && orgStores.length > 0) {
-        accessibleStores = orgStores.map((s: any) => ({
-          id: s.id,
-          name: s.name,
-          code: s.code || undefined,
-        }));
-      }
-    } else {
-      // Cashiers and Staff only have access to specifically assigned stores
-      const { data: storeMembers } = await adminClient
-        .from("store_members")
-        .select("store_id, stores(id, name, code, is_active, organization_id)")
-        .eq("user_id", user.id);
-
-      if (storeMembers && storeMembers.length > 0) {
-        accessibleStores = storeMembers
-          .map((sm: any) => sm.stores)
-          .filter((s: any) => s && s.is_active !== false)
-          .map((s: any) => ({
-            id: s.id,
-            name: s.name,
-            code: s.code || undefined,
-          }));
-      }
-    }
-
-    // Fallback if no stores exist
-    if (accessibleStores.length === 0) {
-      const { data: fallbackStore } = await adminClient
-        .from("stores")
-        .select("id, name, code")
-        .limit(1)
-        .single();
-      accessibleStores = [
-        fallbackStore || { id: "00000000-0000-0000-0000-000000000000", name: "Main Store" },
-      ];
-    }
-
-    const storeIds = accessibleStores.map((s) => s.id);
-
-    // 4. Resolve Active Store (from cookie or default to first accessible store)
-    let activeStore = accessibleStores[0];
-    try {
-      const cookieStore = await cookies();
-      const activeStoreCookie = cookieStore.get("pos_active_store_id")?.value;
-      if (activeStoreCookie) {
-        const found = accessibleStores.find((s) => s.id === activeStoreCookie);
-        if (found) {
-          activeStore = found;
+    if (profile.is_super_admin) {
+      // Platform mode has no implicit tenant. A server-validated explicit selection enters support mode.
+      if (consoleStoreId) {
+        const { data: target, error } = await adminClient.from("stores")
+          .select("id, name, code, is_active, organizations(*)").eq("id", consoleStoreId).single();
+        if (!error && target?.is_active && target.organizations) {
+          primaryOrg = target.organizations;
+          if (primaryOrg.subscription_status !== "suspended") {
+            accessibleStores = [{ id: target.id, name: target.name, code: target.code }];
+            shopConsole = true;
+          }
         }
       }
-    } catch {
-      // Cookies read context fallback
+    } else {
+      const { data: memberships, error } = await adminClient.from("organization_members")
+        .select("*, organizations(*)").eq("user_id", user.id).eq("is_active", true)
+        .order("created_at", { ascending: true });
+      if (error || !memberships?.length) return null;
+      let member = memberships[0];
+      if (selected) {
+        const { data: selectedStore } = await adminClient.from("stores")
+          .select("organization_id").eq("id", selected).single();
+        member = memberships.find(m => m.organization_id === selectedStore?.organization_id) || member;
+      }
+      primaryOrg = member.organizations;
+      if (!primaryOrg || primaryOrg.subscription_status === "suspended") return null;
+      role = member.role.toLowerCase() as UserRole;
+      if (role === "owner" || role === "manager") {
+        const { data, error } = await adminClient.from("stores")
+          .select("id, name, code").eq("organization_id", primaryOrg.id).eq("is_active", true);
+        if (error) return null;
+        accessibleStores = data || [];
+      } else {
+        const { data, error } = await adminClient.from("store_members")
+          .select("stores(id, name, code, is_active, organization_id)").eq("user_id", user.id);
+        if (error) return null;
+        accessibleStores = (data || []).map((m: any) => m.stores)
+          .filter((s: any) => s?.is_active && s.organization_id === primaryOrg.id)
+          .map((s: any) => ({ id: s.id, name: s.name, code: s.code }));
+      }
+      if (!accessibleStores.length) return null;
     }
+    const storeIds = accessibleStores.map(s => s.id);
+    const activeStore = accessibleStores.find(s => s.id === selected) || accessibleStores[0]
+      || { id: "", name: "No shop selected" };
 
     return {
       user: {
@@ -160,8 +124,8 @@ export async function getAuthenticatedSession(): Promise<AuthenticatedSession | 
         isSuperAdmin: !!profile?.is_super_admin,
       },
       organization: {
-        id: primaryOrg?.id || "00000000-0000-0000-0000-000000000000",
-        name: primaryOrg?.name || "Autopilot POS Retail",
+        id: primaryOrg?.id || "",
+        name: primaryOrg?.name || "SaaS Platform",
         businessType: primaryOrg?.business_type,
         currencyCode: primaryOrg?.currency_code || "BDT",
       },
@@ -169,8 +133,10 @@ export async function getAuthenticatedSession(): Promise<AuthenticatedSession | 
       accessibleStores,
       role,
       storeIds,
+      shopConsole,
     };
   } catch (err) {
+    unstable_rethrow(err);
     console.error("Auth session resolution error:", err);
     return null;
   }
@@ -207,8 +173,7 @@ export function requireRole(session: AuthenticatedSession, allowedRoles: UserRol
  * Enforces store-level access.
  */
 export function requireStoreAccess(session: AuthenticatedSession, storeId: string) {
-  if (session.profile.isSuperAdmin) return;
-  if (session.role === "owner" || session.role === "manager") return;
+  if (session.profile.isSuperAdmin && !session.shopConsole) return;
   if (!session.storeIds.includes(storeId)) {
     const error = new Error("Forbidden — Access to this store outlet is denied");
     (error as any).status = 403;
@@ -226,4 +191,13 @@ export function requireSuperAdmin(session: AuthenticatedSession) {
     (error as any).status = 403;
     throw error;
   }
+}
+
+/** Retail APIs must never infer a tenant for a platform session. */
+export async function requireShopAuth(): Promise<AuthenticatedSession> {
+  const session = await requireAuth();
+  if (session.profile.isSuperAdmin && !session.shopConsole) {
+    throw Object.assign(new Error("Open a shop console before using shop operations."), { status: 403 });
+  }
+  return session;
 }

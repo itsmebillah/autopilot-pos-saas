@@ -1,11 +1,11 @@
 import { supabase } from "@/lib/supabase";
 import { NextResponse } from "next/server";
 import { generateInvoiceNumber, buildInvoiceData } from "@/lib/invoice-engine";
-import { requireAuth } from "@/lib/auth-guard";
+import { requireShopAuth } from "@/lib/auth-guard";
 
 export async function POST(req: Request) {
   try {
-    const session = await requireAuth();
+    const session = await requireShopAuth();
 
     const body = await req.json();
     const {

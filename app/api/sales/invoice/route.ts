@@ -1,11 +1,11 @@
 import { supabase } from "@/lib/supabase";
 import { NextResponse } from "next/server";
 import { buildInvoiceData } from "@/lib/invoice-engine";
-import { requireAuth } from "@/lib/auth-guard";
+import { requireShopAuth } from "@/lib/auth-guard";
 
 export async function GET(req: Request) {
   try {
-    await requireAuth();
+    await requireShopAuth();
 
     const { searchParams } = new URL(req.url);
     const saleId = searchParams.get("id");

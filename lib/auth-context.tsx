@@ -17,6 +17,7 @@ export interface UserSessionData {
   phone?: string;
   role: string;
   isSuperAdmin: boolean;
+  shopConsole?: boolean;
   organizationId?: string;
   organizationName?: string;
   activeStore?: StoreSummary;

@@ -1,13 +1,13 @@
 import { supabase } from "@/lib/supabase";
 import { NextResponse } from "next/server";
 import { generateStoreBarcode } from "@/lib/barcode-engine";
-import { requireAuth, requireRole } from "@/lib/auth-guard";
+import { requireShopAuth, requireRole } from "@/lib/auth-guard";
 import { resolveProductCost } from "@/lib/product-costing";
 
 export async function POST(req: Request) {
   try {
     // 0. Enforce Authentication & Role
-    const session = await requireAuth();
+    const session = await requireShopAuth();
     requireRole(session, ["owner", "manager", "inventory"]);
 
     const body = await req.json();

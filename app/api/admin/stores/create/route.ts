@@ -4,6 +4,7 @@ import { getServerSupabaseAdmin } from "@/lib/supabase";
 
 export async function POST(req: Request) {
   try {
+    if (req.headers.get("origin") !== new URL(req.url).origin) return NextResponse.json({ message: "Invalid origin." }, { status: 403 });
     const session = await requireAuth();
     requireSuperAdmin(session);
 

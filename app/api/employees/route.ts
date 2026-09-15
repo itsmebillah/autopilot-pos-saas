@@ -1,10 +1,10 @@
 import { NextResponse } from "next/server";
-import { requireAuth, requireRole } from "@/lib/auth-guard";
+import { requireShopAuth, requireRole } from "@/lib/auth-guard";
 import { getServerSupabaseAdmin } from "@/lib/supabase";
 
 export async function GET(_req: Request) {
   try {
-    const session = await requireAuth();
+    const session = await requireShopAuth();
     requireRole(session, ["owner", "manager"]);
 
     const adminClient = getServerSupabaseAdmin();
@@ -95,7 +95,7 @@ export async function GET(_req: Request) {
 
 export async function POST(req: Request) {
   try {
-    const session = await requireAuth();
+    const session = await requireShopAuth();
     requireRole(session, ["owner", "manager"]);
 
     const body = await req.json();

@@ -59,7 +59,7 @@ export async function GET(
 
     if (storeIds.length > 0) {
       const [{ count: productsCount }, { count: salesCount }] = await Promise.all([
-        adminClient.from("products").select("*", { count: "exact", head: true }).in("store_id", storeIds),
+        adminClient.from("store_products").select("*", { count: "exact", head: true }).in("store_id", storeIds),
         adminClient.from("sales").select("*", { count: "exact", head: true }).in("store_id", storeIds),
       ]);
       totalProducts = productsCount || 0;
@@ -92,18 +92,26 @@ export async function PATCH(
   { params }: { params: Promise<{ id: string }> }
 ) {
   try {
+    if (req.headers.get("origin") !== new URL(req.url).origin) return NextResponse.json({ message: "Invalid origin." }, { status: 403 });
     const session = await requireAuth();
     requireSuperAdmin(session);
 
     const { id } = await params;
     const body = await req.json();
-    const { subscriptionStatus, planTier, maxStores, maxUsers } = body;
+    const { subscriptionStatus, planTier, maxStores, maxUsers, currentPeriodEnd } = body;
+    if ((subscriptionStatus !== undefined && !["trialing", "active", "past_due", "canceled", "suspended"].includes(subscriptionStatus)) ||
+        (planTier !== undefined && !["tier_free", "tier_starter", "tier_pro", "tier_enterprise", "standard"].includes(planTier)) ||
+        ([maxStores, maxUsers].some(v => v !== undefined && (!Number.isInteger(v) || v < 1))) ||
+        (currentPeriodEnd !== undefined && currentPeriodEnd !== null && (typeof currentPeriodEnd !== "string" || !Number.isFinite(Date.parse(currentPeriodEnd))))) {
+      return NextResponse.json({ message: "Invalid subscription settings." }, { status: 400 });
+    }
 
     const adminClient = getServerSupabaseAdmin();
     const updatePayload: Record<string, any> = {
       updated_at: new Date().toISOString(),
     };
 
+    if (currentPeriodEnd !== undefined) updatePayload.current_period_end = currentPeriodEnd;
     if (subscriptionStatus) updatePayload.subscription_status = subscriptionStatus;
     if (planTier) updatePayload.plan_tier = planTier;
     if (typeof maxStores === "number") updatePayload.max_stores = maxStores;

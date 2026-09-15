@@ -1,10 +1,10 @@
 import { supabase } from "@/lib/supabase";
 import { NextResponse } from "next/server";
-import { requireAuth, requireRole } from "@/lib/auth-guard";
+import { requireShopAuth, requireRole } from "@/lib/auth-guard";
 
 export async function GET() {
   try {
-    await requireAuth();
+    await requireShopAuth();
 
     const { data, error } = await supabase
       .from("settings")
@@ -50,7 +50,7 @@ export async function GET() {
 
 export async function POST(req: Request) {
   try {
-    const session = await requireAuth();
+    const session = await requireShopAuth();
     requireRole(session, ["owner", "manager"]);
 
     const body = await req.json();

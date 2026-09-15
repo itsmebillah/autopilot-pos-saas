@@ -140,6 +140,7 @@ export async function GET(req: Request) {
 
 export async function POST(req: Request) {
   try {
+    if (req.headers.get("origin") !== new URL(req.url).origin) return NextResponse.json({ message: "Invalid origin." }, { status: 403 });
     const session = await requireAuth();
     requireSuperAdmin(session);
 
@@ -173,6 +174,20 @@ export async function POST(req: Request) {
     }
 
     const adminClient = getServerSupabaseAdmin();
+
+    let existingAdmin: { id: string; email?: string } | undefined;
+    for (let page = 1; ; page++) {
+      const listed = await adminClient.auth.admin.listUsers({ page, perPage: 500 });
+      if (listed.error) throw new Error("Unable to check owner account.");
+      existingAdmin = listed.data.users.find(u => u.email?.toLowerCase() === adminEmail.toLowerCase());
+      if (existingAdmin || listed.data.users.length < 500) break;
+    }
+    if (existingAdmin) {
+      const { data: existingProfile, error: profileError } = await adminClient.from("user_profiles")
+        .select("is_super_admin").eq("id", existingAdmin.id).maybeSingle();
+      if (profileError) throw new Error("Unable to verify owner profile.");
+      if (existingProfile?.is_super_admin) return NextResponse.json({ message: "Platform owners cannot be assigned as shop owners." }, { status: 400 });
+    }
 
     // 1. Fetch the category defaults
     const { data: categoryData, error: catErr } = await adminClient
@@ -275,11 +290,6 @@ export async function POST(req: Request) {
 
     // 5. Create or Find Shop Admin in Supabase Auth
     let adminUserId: string;
-    const { data: existingUsers } = await adminClient.auth.admin.listUsers();
-    const existingAdmin = existingUsers?.users?.find(
-      (u) => u.email?.toLowerCase() === adminEmail.toLowerCase()
-    );
-
     if (existingAdmin) {
       adminUserId = existingAdmin.id;
     } else {
@@ -297,15 +307,17 @@ export async function POST(req: Request) {
     }
 
     // 6. Upsert User Profile
-    await adminClient.from("user_profiles").upsert(
+    const { error: profileWriteError } = await adminClient.from("user_profiles").upsert(
       {
         id: adminUserId,
         full_name: adminFullName,
         phone: adminPhone || null,
-        is_super_admin: false,
+
       },
-      { onConflict: "id" }
+      { onConflict: "id", ignoreDuplicates: true }
     );
+
+    if (profileWriteError) throw new Error("Unable to create owner profile.");
 
     // 7. Create Organization Membership (Role = 'owner')
     await adminClient.from("organization_members").upsert(

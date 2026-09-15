@@ -34,7 +34,9 @@ export default function Home() {
       }
 
       await refreshSession();
-      router.push("/dashboard");
+      const sessionResponse = await fetch("/api/auth/me");
+      const sessionData = await sessionResponse.json();
+      router.push(sessionData.user?.isSuperAdmin ? "/admin" : "/dashboard");
     } catch (err) {
       console.error("Login error:", err);
       setErrorMessage("Network error occurred. Please check your connection.");

@@ -1,5 +1,5 @@
 import { NextResponse } from "next/server";
-import { requireAuth, requireRole } from "@/lib/auth-guard";
+import { requireShopAuth, requireRole } from "@/lib/auth-guard";
 import { getServerSupabaseAdmin } from "@/lib/supabase";
 
 export async function PATCH(
@@ -7,7 +7,7 @@ export async function PATCH(
   { params }: { params: Promise<{ id: string }> }
 ) {
   try {
-    const session = await requireAuth();
+    const session = await requireShopAuth();
     requireRole(session, ["owner", "manager"]);
 
     const { id } = await params;

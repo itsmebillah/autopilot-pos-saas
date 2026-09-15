@@ -21,6 +21,7 @@ export async function GET() {
         phone: session.profile.phone,
         role: session.role,
         isSuperAdmin: session.profile.isSuperAdmin,
+        shopConsole: !!session.shopConsole,
         organizationId: session.organization.id,
         organizationName: session.organization.name,
         activeStore: session.store,

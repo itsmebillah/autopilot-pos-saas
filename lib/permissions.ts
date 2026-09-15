@@ -15,6 +15,7 @@ export type PermissionKey =
 export type ExtendedUserRole = UserRole | "accountant";
 
 export const ROLE_PERMISSIONS: Record<ExtendedUserRole, PermissionKey[]> = {
+  platform_admin: [],
   owner: [
     "canManageEmployees",
     "canChangeEmployeeRole",

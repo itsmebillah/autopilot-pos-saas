@@ -1,11 +1,11 @@
 import { supabase } from "@/lib/supabase";
 import { NextResponse } from "next/server";
-import { requireAuth, requireRole } from "@/lib/auth-guard";
+import { requireShopAuth, requireRole } from "@/lib/auth-guard";
 import { roundCurrency } from "@/lib/product-costing";
 
 export async function GET() {
   try {
-    const session = await requireAuth();
+    const session = await requireShopAuth();
     requireRole(session, ["owner", "manager"]);
 
     const [salesRes, productsRes, saleItemsRes] = await Promise.all([
