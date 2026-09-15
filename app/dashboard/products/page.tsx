@@ -2,6 +2,7 @@
 
 import { useEffect, useState } from "react";
 import Sidebar from "@/components/Sidebar";
+import PageAccessGuard from "@/components/PageAccessGuard";
 import {
   Package,
   Search,
@@ -311,7 +312,8 @@ export default function ProductsPage() {
   );
 
   return (
-    <div className="min-h-screen bg-slate-50 dark:bg-black text-slate-900 dark:text-white flex flex-col lg:flex-row transition-colors">
+    <PageAccessGuard permission={["canManageProducts", "canManageInventory"]}>
+      <div className="min-h-screen bg-slate-50 dark:bg-black text-slate-900 dark:text-white flex flex-col lg:flex-row transition-colors">
       <Sidebar />
 
       <main className="flex-1 w-full max-w-7xl mx-auto p-4 sm:p-6 lg:p-8">
@@ -1117,5 +1119,6 @@ export default function ProductsPage() {
         />
       </main>
     </div>
+    </PageAccessGuard>
   );
 }

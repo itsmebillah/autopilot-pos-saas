@@ -2,6 +2,7 @@
 
 import { useEffect, useState } from "react";
 import Sidebar from "@/components/Sidebar";
+import PageAccessGuard from "@/components/PageAccessGuard";
 import { Receipt, Search, Printer, Calendar } from "lucide-react";
 import InvoiceModal from "@/components/InvoiceModal";
 import { InvoiceData } from "@/lib/invoice-engine";
@@ -61,7 +62,8 @@ export default function OrdersPage() {
   );
 
   return (
-    <div className="min-h-screen bg-slate-50 dark:bg-black text-slate-900 dark:text-white flex flex-col lg:flex-row">
+    <PageAccessGuard permission={["canAccessPOS", "canViewFinancialReports", "canManageProducts"]}>
+      <div className="min-h-screen bg-slate-50 dark:bg-black text-slate-900 dark:text-white flex flex-col lg:flex-row">
       <Sidebar />
 
       <main className="flex-1 w-full max-w-7xl mx-auto p-4 sm:p-6 lg:p-8">
@@ -176,5 +178,6 @@ export default function OrdersPage() {
         />
       </main>
     </div>
+    </PageAccessGuard>
   );
 }

@@ -22,6 +22,7 @@ import InvoiceModal from "@/components/InvoiceModal";
 import { InvoiceData } from "@/lib/invoice-engine";
 
 import { useAuth } from "@/lib/auth-context";
+import PageAccessGuard from "@/components/PageAccessGuard";
 
 export default function SalesPage() {
   const { user } = useAuth();
@@ -266,7 +267,8 @@ export default function SalesPage() {
   }
 
   return (
-    <div className="min-h-screen bg-slate-50 dark:bg-black text-slate-900 dark:text-white flex flex-col lg:flex-row transition-colors">
+    <PageAccessGuard permission="canAccessPOS">
+      <div className="min-h-screen bg-slate-50 dark:bg-black text-slate-900 dark:text-white flex flex-col lg:flex-row transition-colors">
       <Sidebar />
 
       <main className="flex-1 w-full max-w-7xl mx-auto p-3 sm:p-5 lg:p-8 flex flex-col min-h-0">
@@ -576,5 +578,6 @@ export default function SalesPage() {
         />
       </main>
     </div>
+    </PageAccessGuard>
   );
 }

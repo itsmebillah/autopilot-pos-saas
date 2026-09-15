@@ -23,11 +23,12 @@ import {
 
 import ThemeToggle from "@/components/ThemeToggle";
 import { useAuth } from "@/lib/auth-context";
+import { hasPermission } from "@/lib/permissions";
 
 export default function Sidebar() {
   const [isOpen, setIsOpen] = useState(false);
   const pathname = usePathname();
-  const { user, signOut, switchStore } = useAuth();
+  const { user, isLoading, signOut, switchStore } = useAuth();
 
   // Auto-close mobile drawer on route change
   useEffect(() => {
@@ -46,22 +47,66 @@ export default function Sidebar() {
     };
   }, [isOpen]);
 
-  const isManagement = user?.role === "owner" || user?.role === "manager" || user?.isSuperAdmin;
+  const role = user?.role || "cashier";
+  const isSuperAdmin = !!user?.isSuperAdmin;
 
-  const navItems = [
-    { href: "/dashboard/account", label: "Account Settings", icon: User },
-    { href: "/dashboard", label: "Dashboard", icon: LayoutDashboard },
-    { href: "/dashboard/sales", label: "Sales POS", icon: ShoppingCart },
-    { href: "/dashboard/products", label: "Products & Stock", icon: Package },
-    { href: "/dashboard/orders", label: "Orders History", icon: Receipt },
-    ...(isManagement
-      ? [
-          { href: "/dashboard/employees", label: "Staff & Employees", icon: Users },
-          { href: "/dashboard/reports", label: "Reports", icon: BarChart3 },
-          { href: "/dashboard/settings", label: "Store Settings", icon: Settings },
-        ]
-      : []),
+  const allNavItems = [
+    {
+      href: "/dashboard/account",
+      label: "Account Settings",
+      icon: User,
+      visible: true,
+    },
+    {
+      href: "/dashboard",
+      label: "Dashboard",
+      icon: LayoutDashboard,
+      visible: true,
+    },
+    {
+      href: "/dashboard/sales",
+      label: "Sales POS",
+      icon: ShoppingCart,
+      visible: hasPermission(role, "canAccessPOS", isSuperAdmin),
+    },
+    {
+      href: "/dashboard/products",
+      label: "Products & Stock",
+      icon: Package,
+      visible:
+        hasPermission(role, "canManageProducts", isSuperAdmin) ||
+        hasPermission(role, "canManageInventory", isSuperAdmin),
+    },
+    {
+      href: "/dashboard/orders",
+      label: "Orders History",
+      icon: Receipt,
+      visible:
+        hasPermission(role, "canAccessPOS", isSuperAdmin) ||
+        hasPermission(role, "canViewFinancialReports", isSuperAdmin) ||
+        hasPermission(role, "canManageProducts", isSuperAdmin),
+    },
+    {
+      href: "/dashboard/employees",
+      label: "Staff & Employees",
+      icon: Users,
+      visible: hasPermission(role, "canManageEmployees", isSuperAdmin),
+    },
+    {
+      href: "/dashboard/reports",
+      label: "Reports",
+      icon: BarChart3,
+      visible: hasPermission(role, "canViewFinancialReports", isSuperAdmin),
+    },
+    {
+      href: "/dashboard/settings",
+      label: "Store Settings",
+      icon: Settings,
+      visible: hasPermission(role, "canManageSettings", isSuperAdmin),
+    },
   ];
+
+  const navItems = allNavItems.filter((item) => item.visible);
 
   return (
     <>
@@ -187,24 +232,32 @@ export default function Sidebar() {
           )}
 
           <nav className="space-y-1.5" aria-label="Mobile Navigation">
-            {navItems.map((item) => {
-              const Icon = item.icon;
-              const isActive = pathname === item.href;
-              return (
-                <Link
-                  key={item.href}
-                  href={item.href}
-                  className={`flex items-center gap-3.5 px-3.5 py-3 rounded-xl text-sm font-medium transition-all ${
-                    isActive
-                      ? "bg-green-500/15 text-green-700 dark:text-green-400 border border-green-500/30 font-semibold"
-                      : "text-gray-700 dark:text-gray-300 hover:bg-gray-100 dark:hover:bg-white/10 hover:text-gray-900 dark:hover:text-white"
-                  }`}
-                >
-                  <Icon size={20} className={isActive ? "text-green-600 dark:text-green-400" : "text-gray-500 dark:text-gray-400"} />
-                  <span>{item.label}</span>
-                </Link>
-              );
-            })}
+            {isLoading ? (
+              <div className="space-y-2 py-1">
+                {[1, 2, 3, 4].map((i) => (
+                  <div key={i} className="h-11 rounded-xl bg-slate-100 dark:bg-white/5 animate-pulse" />
+                ))}
+              </div>
+            ) : (
+              navItems.map((item) => {
+                const Icon = item.icon;
+                const isActive = pathname === item.href;
+                return (
+                  <Link
+                    key={item.href}
+                    href={item.href}
+                    className={`flex items-center gap-3.5 px-3.5 py-3 rounded-xl text-sm font-medium transition-all ${
+                      isActive
+                        ? "bg-green-500/15 text-green-700 dark:text-green-400 border border-green-500/30 font-semibold"
+                        : "text-gray-700 dark:text-gray-300 hover:bg-gray-100 dark:hover:bg-white/10 hover:text-gray-900 dark:hover:text-white"
+                    }`}
+                  >
+                    <Icon size={20} className={isActive ? "text-green-600 dark:text-green-400" : "text-gray-500 dark:text-gray-400"} />
+                    <span>{item.label}</span>
+                  </Link>
+                );
+              })
+            )}
           </nav>
         </div>
 
@@ -303,24 +356,32 @@ export default function Sidebar() {
           )}
 
           <nav className="space-y-1.5" aria-label="Desktop Navigation">
-            {navItems.map((item) => {
-              const Icon = item.icon;
-              const isActive = pathname === item.href;
-              return (
-                <Link
-                  key={item.href}
-                  href={item.href}
-                  className={`flex items-center gap-3.5 px-3.5 py-3 rounded-xl text-sm font-medium transition-all ${
-                    isActive
-                      ? "bg-green-500/15 text-green-700 dark:text-green-400 border border-green-500/30 font-semibold"
-                      : "text-gray-700 dark:text-gray-300 hover:bg-gray-100 dark:hover:bg-white/10 hover:text-gray-900 dark:hover:text-white"
-                  }`}
-                >
-                  <Icon size={20} className={isActive ? "text-green-600 dark:text-green-400" : "text-gray-500 dark:text-gray-400"} />
-                  <span>{item.label}</span>
-                </Link>
-              );
-            })}
+            {isLoading ? (
+              <div className="space-y-2 py-1">
+                {[1, 2, 3, 4, 5].map((i) => (
+                  <div key={i} className="h-11 rounded-xl bg-slate-100 dark:bg-white/5 animate-pulse" />
+                ))}
+              </div>
+            ) : (
+              navItems.map((item) => {
+                const Icon = item.icon;
+                const isActive = pathname === item.href;
+                return (
+                  <Link
+                    key={item.href}
+                    href={item.href}
+                    className={`flex items-center gap-3.5 px-3.5 py-3 rounded-xl text-sm font-medium transition-all ${
+                      isActive
+                        ? "bg-green-500/15 text-green-700 dark:text-green-400 border border-green-500/30 font-semibold"
+                        : "text-gray-700 dark:text-gray-300 hover:bg-gray-100 dark:hover:bg-white/10 hover:text-gray-900 dark:hover:text-white"
+                    }`}
+                  >
+                    <Icon size={20} className={isActive ? "text-green-600 dark:text-green-400" : "text-gray-500 dark:text-gray-400"} />
+                    <span>{item.label}</span>
+                  </Link>
+                );
+              })
+            )}
           </nav>
         </div>
 

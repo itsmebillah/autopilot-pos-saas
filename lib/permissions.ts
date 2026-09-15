@@ -57,7 +57,8 @@ export const ROLE_PERMISSIONS: Record<ExtendedUserRole, PermissionKey[]> = {
 /**
  * Checks if a given role has a specific permission key.
  */
-export function hasPermission(role: string, permission: PermissionKey): boolean {
+export function hasPermission(role: string, permission: PermissionKey, isSuperAdmin = false): boolean {
+  if (isSuperAdmin) return true;
   const roleKey = (role?.toLowerCase() as ExtendedUserRole) || "cashier";
   const permissions = ROLE_PERMISSIONS[roleKey] || [];
   return permissions.includes(permission);
@@ -69,7 +70,7 @@ export function hasPermission(role: string, permission: PermissionKey): boolean 
  */
 export function requirePermission(session: AuthenticatedSession, permission: PermissionKey) {
   if (session.profile.isSuperAdmin) return;
-  if (!hasPermission(session.role, permission)) {
+  if (!hasPermission(session.role, permission, session.profile.isSuperAdmin)) {
     const error = new Error(`Forbidden — Insufficient permissions. Required action: [${permission}]`);
     (error as any).status = 403;
     throw error;

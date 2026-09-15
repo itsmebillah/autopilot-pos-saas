@@ -23,6 +23,7 @@ import {
   EyeOff,
 } from "lucide-react";
 import { useAuth } from "@/lib/auth-context";
+import PageAccessGuard from "@/components/PageAccessGuard";
 
 interface EmployeeItem {
   id: string;
@@ -388,7 +389,8 @@ export default function EmployeesPage() {
   const isOwner = user?.role === "owner" || user?.isSuperAdmin;
 
   return (
-    <div className="min-h-screen bg-slate-50 dark:bg-black text-slate-900 dark:text-white flex flex-col lg:flex-row transition-colors">
+    <PageAccessGuard permission="canManageEmployees">
+      <div className="min-h-screen bg-slate-50 dark:bg-black text-slate-900 dark:text-white flex flex-col lg:flex-row transition-colors">
       <Sidebar />
 
       <main className="flex-1 w-full max-w-7xl mx-auto p-3.5 sm:p-6 lg:p-8 space-y-4 sm:space-y-6">
@@ -1451,5 +1453,6 @@ export default function EmployeesPage() {
         )}
       </main>
     </div>
+    </PageAccessGuard>
   );
 }
